@@ -1,5 +1,5 @@
 ---
-title: "box-muller"
+title: "Box-Muller method"
 author: "Nikolai German"
 date: '`r Sys.Date()`'
 output: html_document
