@@ -1,0 +1,92 @@
+---
+title: "Monte Carlo Integration"
+author: "Nikolai German"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+estimate_pi <- function(N) {
+  checkmate::assertNumeric(N, min.len = 1, any.missing = FALSE)
+  inner_pi <- function(N) {
+    N <- trunc(N)
+    x <- runif(N, min = -1, max = 1)
+    y <- runif(N, min = -1, max = 1)
+    Vol <- 4
+    z <- x^2 + y^2 <= 1
+    Vol * sum(z) / N
+  }
+  estimate <- vapply(N, inner_pi, numeric(1))
+  error <- abs(pi - estimate)
+  structure(estimate, "error" = error)
+}
+```
+
+
+```{r}
+# make plot
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+
+df <- tibble(x = 10^seq(1,8, by = .1)) %>%
+  mutate(estimate = attr(estimate_pi(x), "error"),
+         "1/sqrt(N)" = 1/sqrt(x))
+
+df %>%
+  pivot_longer(-x, names_to = "row", values_to = "val") %>%
+  mutate(log_x = log10(x),
+         log_val = log10(val)) %>%
+  ggplot(aes(log_x, log_val, color = row)) +
+  geom_line() +
+  scale_x_continuous(labels = scales::label_math()) +
+  scale_y_continuous(labels = scales::label_math()) +
+  annotation_logticks() +
+  labs(x = "N", 
+       y = "Error", 
+       color = "legend",
+       title = "Estimation Error vs. Number of Samples") +
+  theme_light()
+
+#########
+```
+
+
+```{r}
+set.seed(123)
+sample10 <- tibble(X = rnorm(10, 3))
+sample100 <- tibble(X = rnorm(100, 3))
+sample1000 <- tibble(X = rnorm(1000, 3))
+
+theoretical.values <- tibble(x = seq(-1, 9, length.out = 1000),
+               f = dnorm(x, 3))
+
+p10 <- ggplot() +
+  geom_density(data = sample10, aes(x = X), color = "magenta") +
+  geom_line(data = theoretical.values, aes(x, f), color = "blue") +
+  geom_rug(data = sample10, aes(x = X)) +
+  scale_y_continuous(limits = c(0, 0.5)) +
+  theme_light()
+
+p100 <- ggplot() +
+  geom_density(data = sample100, aes(x = X), color = "magenta") +
+  geom_line(data = theoretical.values, aes(x, f), color = "blue") +
+  geom_rug(data = sample100, aes(x = X)) +
+  scale_y_continuous(limits = c(0, 0.5)) +
+  theme_light()
+
+p1000 <- ggplot() +
+  geom_density(data = sample1000, aes(x = X), color = "magenta") +
+  geom_line(data = theoretical.values, aes(x, f), color = "blue") +
+  geom_rug(data = sample1000, aes(x = X)) +
+  scale_y_continuous(limits = c(0, 0.5)) +
+  theme_light()
+
+(p10 | p100 | p1000) + plot_layout(axes = "collect")
+```
+

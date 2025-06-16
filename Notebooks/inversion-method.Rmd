@@ -1,0 +1,87 @@
+---
+title: "Inversion method"
+author: "Nikolai German"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tibble)
+library(ggplot2)
+library(patchwork)
+
+set.seed(125)
+U <- runif(30)
+
+df <- tibble(x = seq(0, 5, length.out =  1000),
+             p = pexp(x))
+
+p.construction <- ggplot(df, aes(x, p)) +
+  geom_line() +
+  scale_x_continuous(limits = c(0, 5)) +
+  labs(y = latex2exp::TeX(r'($P(X \leq x)$)')) +
+  theme_light() 
+
+for (i in seq_along(U)) {
+  if (i %% 5 != 0) {
+    next
+  } else {
+    x_inv <- qexp(U[[i]])
+  p.construction <- p.construction +
+    geom_segment(x = 0, xend = x_inv, y = U[[i]], yend = U[[i]], color = "blue", lty = "dashed") +
+    geom_segment(x = x_inv, xend = x_inv, y = U[[i]], yend = 0, color = "blue", lty = "dashed")
+  }
+}
+
+p.dist <- ggplot(as_tibble(qexp(U)), aes(value)) +
+  geom_density() +
+  geom_rug() +
+  stat_function(fun = dexp, args = c(1), n = 100, color = "blue", lty = "dashed") +
+  labs(x = "x", y = latex2exp::TeX(r'($f_X(x)$)')) +
+  scale_x_continuous(limits = c(0, 5)) +
+  theme_light()
+
+(p.inversion <- (p.construction / p.dist) + plot_layout(axes = "collect") + plot_annotation(title = "inversion method for exponential distributed random variable"))
+```
+
+
+```{r include=FALSE}
+ggsave("../plots/inversion.png", p.inversion, device = "png")
+```
+
+
+```{r}
+inverse.cdf.sample <- function(inverse.cdf, N, ...) {
+  checkmate::assertFunction(inverse.cdf, args = "p")
+  checkmate::assertIntegerish(N)
+  U <- runif(N)
+  X <- inverse.cdf(p = U, ...)
+  return(X)
+}
+
+inv.exp <- function(p, lambda) {
+  -log(1-p)/lambda
+}
+
+par(mfrow = c(2,2))
+for (lambda in c(.5, 1, 2, 4)) {
+  exp.sample <- inverse.cdf.sample(inv.exp, 100000, lambda = lambda)
+  hist(exp.sample, freq = FALSE, xlim = c(0,10), ylim = c(0,lambda), xlab = "x", main = sprintf("lambda = %.1f", lambda))
+  curve(dexp(x, rate = lambda), add = TRUE, col = "blue", lwd = 2)
+}
+
+# works in R even with non-analytically functions
+par(mfrow = c(2,2))
+for (mean in c(-2, 5)) {
+  for (sd in c(1, 3)) {
+    norm.sample <- inverse.cdf.sample(qnorm, 1000, mean = mean, sd = sd)
+    hist(norm.sample, xlim = c(-3*sd + mean, 3*sd + mean), ylim = c(0, .5/sd), freq = FALSE, xlab = "x", main = sprintf("mu = %.1f, sd = %.1f", mean, sd))
+    curve(dnorm(x, mean = mean, sd = sd), add = TRUE, col = "blue", lwd = 2)
+  }
+}
+```
+
