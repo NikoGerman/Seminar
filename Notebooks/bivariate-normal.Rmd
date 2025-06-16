@@ -1,0 +1,92 @@
+---
+title: "Sampling from a bivariate normal distribution"
+author: "Nikolai German"
+date: "`r Sys.Date()`"
+output: html_document
+---
+We want to show how to transform a bivariate standard normal distributed random variable $Z \sim \mathcal{N}_2(\boldsymbol{0}, I_2)$ into a normal distributed random variable $X$ with expectation $\boldsymbol{\mu}$ and variance structure $\Sigma$.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+First we construct $Z$ by sampling two equal length vectors of i.i.d. standard normal samples.
+
+```{r}
+Z <- cbind(Z_1 = rnorm(100),
+            Z_2 = rnorm(100))
+```
+
+Checking the properties of the samples:
+
+```{r}
+# means
+round(colMeans(Z), 2)
+# variance
+round(apply(Z, MARGIN = 2, var), 2)
+# covariance
+round(cov(Z[,1], Z[,2]), 2)
+```
+
+Next, we initialize a vector of means $\boldsymbol{\mu}$ and a covariance matrix $\Sigma$.
+
+```{r}
+Sigma <- matrix(c(5, 2, 2, 1), ncol = 2)
+mu <- c(-1, 1)
+```
+
+The implementation of Cholesky decomposition `chol()` returns an upper right triangular matrix, rather than a lower left:
+
+$$
+\Sigma = R^\top R
+$$
+
+```{r}
+(R <- chol(Sigma))
+```
+
+Subsequently, we compute $X = \boldsymbol{\mu} + Z \cdot R$
+
+```{r}
+X <- t(mu + t(Z %*% R))
+colnames(X) <- c("X_1", "X_2")
+```
+
+We have a look at the properties of $X$:
+
+```{r}
+round(colMeans(X), 2)
+round(apply(X, MARGIN = 2, var), 2)
+round(cov(X[,1], X[,2]), 2)
+```
+
+Lastly, we visualise $Z$ and $X$
+
+```{r}
+library(ggplot2)
+library(patchwork)
+
+p_01 <- ggplot() +
+  geom_density2d(data = as.data.frame(Z), aes(Z_1, Z_2)) +
+  coord_fixed(ratio = 1, xlim = c(-6,6), ylim = c(-4,4)) +
+  labs(x = latex2exp::TeX("$Z_1$"),
+       y = latex2exp::TeX("$Z_2$"),
+       title = "Z: before transformation") +
+  theme_light()
+
+p_02 <- ggplot() +
+  geom_density_2d(data = as.data.frame(X), aes(X_1, X_2)) +
+  coord_fixed(ratio = 1, xlim = c(-6,6), ylim = c(-4,4)) +
+  labs(x = latex2exp::TeX("$X_1$"),
+       y = latex2exp::TeX("$X_2$"),
+       title = "X: after transformation") +
+  theme_light()
+
+(p <- (p_01 | p_02))
+```
+
+
+```{r include=FALSE}
+ggsave("../plots/bivariate.png", p, device = "png", width = 12, height = 5)
+```
+
