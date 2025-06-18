@@ -1,0 +1,156 @@
+---
+title: 'Example 1: Estimating $\pi$'
+author: "Nikolai German"
+date: "`r Sys.Date()`"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+# install.packages("SobolSequence")
+library(patchwork)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+```
+
+We want to estimate $\pi$ by sampling points from $[-1,1] \times [-1,1]$ in combination with the indicator function $\mathbf{1}(X^2 + Y^2 \leq 1)$.
+
+1. Standard Monte Carlo
+```{r}
+estimate_pi_mc <- function(N) {
+  checkmate::assertNumeric(N, min.len = 1, any.missing = FALSE)
+  inner_pi <- function(N) {
+    N <- trunc(N)
+    x <- runif(N, min = -1, max = 1)
+    y <- runif(N, min = -1, max = 1)
+    Vol <- 4
+    z <- x^2 + y^2 <= 1
+    Vol * sum(z) / N
+  }
+  estimate <- vapply(N, inner_pi, numeric(1))
+  error <- abs(pi - estimate)
+  structure(estimate, "error" = error)
+}
+```
+
+2. Importance Sampling
+```{r}
+estimate_pi_is <- function(N) {
+  checkmate::assertNumeric(N, min.len = 1, any.missing = FALSE)
+  inner_pi <- function(N) {
+    N <- trunc(N)
+    x <- rnorm(N, 0, .33)
+    y <- rnorm(N, 0, .33)
+    f.log = dnorm(x, 0, .33, log = TRUE) + dnorm(y, 0, .33, log = TRUE)
+    z <- x^2 + y^2 <= 1
+    z.norm <- z / exp(f.log)
+    sum(z.norm) / N  
+  }
+  estimate <- vapply(N, inner_pi, numeric(1))
+  error <- abs(pi - estimate)
+  structure(estimate, "error" = error)
+}
+```
+
+3. Quasi-Monte Carlo
+```{r}
+estimate_pi_qmc <- function(N) {
+  checkmate::assertNumeric(N, min.len = 1, any.missing = FALSE)
+  inner_pi <- function(N) {
+    s <- 2
+    m <- floor(log(N, 2))
+    mat <- SobolSequence::sobolSequence.points(dimR=s, dimF2=m, count = N)
+
+    Vol <- 4
+    z <- (2 * mat[,1] - 1)^2 + (2 * mat[,2] - 1)^2 <= 1
+    Vol * sum(z) / N
+  }
+  estimate <- vapply(N, inner_pi, numeric(1))
+  error <- abs(pi - estimate)
+  structure(estimate, "error" = error)
+}
+```
+
+4. Equidistant grid
+```{r}
+estimate_pi_grid <- function(N) {
+  checkmate::assertNumeric(N, min.len = 1, any.missing = FALSE)
+  inner_pi <- function(N) {
+    N <- trunc(N)
+    n <- sqrt(N)
+    grid <- expand.grid(
+      x = seq(-1, 1, length.out = n),
+      y = seq(-1, 1, length.out = n)
+    )
+    Vol <- 4
+    z <- grid$x^2 + grid$y^2 <= 1
+    Vol * mean(z)  
+  }
+  estimate <- vapply(N, inner_pi, numeric(1))
+  error <- abs(pi - estimate)
+  structure(estimate, "error" = error)
+}
+```
+
+Let's look at the diffenrent sampling approaches, using 1024 samples each.
+```{r}
+set.seed(123)
+
+N = 2^10
+
+samples_mc = tibble(x = runif(N, -1, 1), y = runif(N, -1, 1))
+samples_is = tibble(x = rnorm(N, 0, .33), y = rnorm(N, 0, .33))
+samples_qmc = as_tibble(SobolSequence::sobolSequence.points(2, 10, 2^10)) %>%
+  rename(x = V1, y = V2) %>%
+  mutate(x = 2*x - 1, y = 2*y - 1)
+samples_grid = expand_grid(x = seq(-1, 1, length.out = 2^5), y = seq(-1, 1, length.out = 2^5))
+
+p_mc <- ggplot(samples_mc, aes(x, y, color = (x^2 + y^2 <= 1))) +
+  geom_point() +
+  guides(color = "none") +
+  theme_light() +
+  ggtitle("Uniform Samples")
+
+p_is <- p_mc %+% samples_is + ggtitle("Normal Samples")
+
+p_qmc <- p_mc %+% samples_qmc + ggtitle("Sobol Sequence")
+
+p_grid <- p_mc %+% samples_grid + ggtitle("Equidistant Grid")
+
+(p_samples <- (p_grid | p_mc) / (p_is | p_qmc))
+```
+
+```{r eval=FALSE, include=FALSE}
+ggsave("../plots/ex1-samples.png", p_samples, device = "png")
+```
+
+Finally, visualize the convergence of the error $|\hat{\pi} - \pi|$:
+```{r}
+set.seed(123)
+df <- tibble(N = 2^seq(10, 26, by = 2)) %>%
+  mutate("Uniform MC" = attr(estimate_pi_mc(N), "error"),
+         "IS" = attr(estimate_pi_is(N), "error"),
+         "QMC" = attr(estimate_pi_qmc(N), "error"),
+         "Grid" = attr(estimate_pi_grid(N), "error"),
+         "Reference" = 1/sqrt(N))
+
+(p_estimation_error <- df %>%
+  pivot_longer(-N, names_to = "method", values_to = "error") %>%
+  mutate(log.N = log2(N),
+         log.error = log2(error)) %>%
+  ggplot(aes(log.N, log.error, color = method)) +
+  geom_line() +
+  scale_x_continuous(labels = scales::label_math(expr = 2^.x)) +
+  scale_y_continuous(labels = scales::label_math(expr = 2^.x)) +
+  annotation_logticks() +
+  labs(x = "N", 
+       y = "Error", 
+       color = "Method",
+       title = "Estimation Error vs. Number of Samples") +
+  theme_light())
+```
+
+
+```{r eval=FALSE, include=FALSE}
+ggsave("../plots/ex1-estimation-error.png", p_estimation_error, device = "png")
+```

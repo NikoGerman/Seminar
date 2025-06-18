@@ -89,4 +89,38 @@ p1000 <- ggplot() +
 
 (p10 | p100 | p1000) + plot_layout(axes = "collect")
 ```
+```{r}
+f <- function(x) {
+  sin(x)^3
+}
+
+curve(f, from = 0, to = 1)
+
+df <- tibble(x = runif(1000), f.x = runif(1000), within = f(x) >= f.x)
+ggplot(df, aes(x, f.x)) +
+  geom_point(aes(color = within)) +
+  theme_light() +
+  stat_function(fun = f, lwd = 1.2)
+```
+
+
+```{r}
+mc <- function() {
+  x <- runif(1)
+  f.x <- runif(1)
+  if(f(x) >= f.x) {
+    return(TRUE)
+  } else {
+    return(FALSE)
+    }
+}
+I <- integrate(f = f, 0, 1)
+
+
+n <- trunc(10^seq(4, 6, length.out = 30))
+est <- vapply(n, function(n) mean(replicate(n, mc())), numeric(1))
+
+plot(n, est, type = "l")
+abline(h = I$value, lty = "dashed")
+```
 
