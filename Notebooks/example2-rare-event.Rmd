@@ -1,0 +1,162 @@
+---
+title: "Estimating the probability of a rare event"
+author: "Nikolai German"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+basic_mc <- function(N, mu, sigma, threshold) {
+  params <- cbind(mu, sigma)
+  V <- apply(params, MARGIN = 1, FUN = function(x) exp(rnorm(N, x[[1]], x[[2]])))
+  S <- rowSums(V)
+  V_max <- apply(V, MARGIN = 1, max)
+  V_mean <- rowMeans(V)
+  
+  indicator <- (S > threshold)
+  
+  p <- mean(indicator)
+  avg_max <- mean(V_max[indicator])
+  avg_sum <- mean(S[indicator])
+  mean_S <- mean(S)
+  E_S <- sum(exp(mu + (sigma^2)/2))
+  RE <- sd(indicator) / (p*sqrt(N))
+  
+  structure(p,
+            "positive cases" = sum(indicator),
+            "average maximum element" = avg_max,
+            "mean sum if S > threshold" = avg_sum, 
+            "mean Sum" = mean_S,
+            "expected Sum" = E_S,
+            "relative Error" = RE)
+}
+```
+
+
+```{r}
+# run example
+(result <- basic_mc(N = 1e7, 
+         mu = c(-.1, .2, -.3, .1, 0),
+         sigma = sqrt(c(.3, .3, .3, .2, .2)),
+         threshold = 20))
+```
+
+```{r}
+importance_sampling_mc <- function(N, mu, sigma, mu_tilde, sigma_tilde, threshold) {
+  # Sample from importance sampling distributions
+  params_is <- cbind(mu_tilde, sigma_tilde)
+  
+  # Generate log-returns from importance distributions (needed for weights)
+  Z_tilde <- apply(params_is, MARGIN = 1, FUN = function(x) rnorm(N, x[[1]], x[[2]]))
+  
+  # Calculate returns (same transformation as original)
+  V <- exp(Z_tilde)
+  S <- rowSums(V)
+  V_max <- apply(V, MARGIN = 1, max)
+  V_mean <- rowMeans(V)
+  
+  # Calculate importance weights for each simulation
+  weights <- numeric(N)
+  for(k in 1:N) {
+    log_weight <- 0
+    for(i in 1:length(mu)) {
+      log_weight <- log_weight + 
+        dnorm(Z_tilde[k,i], mu[[i]], sigma[[i]], log = TRUE) - 
+        dnorm(Z_tilde[k,i], mu_tilde[[i]], sigma_tilde[[i]], log = TRUE)
+    }
+    weights[[k]] <- exp(log_weight)
+  }
+  
+  indicator <- (S > threshold)
+  
+  # Weighted probability estimate
+  p <- mean(indicator * weights)
+  
+  # Conditional expectations using weighted averages
+  if(sum(indicator) > 0) {
+    weights_cond <- weights[indicator]
+    avg_max <- sum(V_max[indicator] * weights_cond) / sum(weights_cond)
+    avg_sum <- sum(S[indicator] * weights_cond) / sum(weights_cond)
+  } else {
+    avg_max <- NA
+    avg_sum <- NA
+  }
+  
+  mean_S <- mean(S * weights)
+  E_S <- sum(exp(mu + (sigma^2)/2))
+  
+  # Relative error for weighted estimator
+  weighted_indicator <- indicator * weights
+  RE <- sd(weighted_indicator) / (p * sqrt(N))
+  
+  structure(p,
+            "positive cases" = sum(indicator),
+            "average maximum element" = avg_max,
+            "mean sum if S > threshold" = avg_sum, 
+            "mean Sum" = mean_S,
+            "expected Sum" = E_S,
+            "relative Error" = RE)
+}
+```
+
+
+```{r}
+# Example usage with higher variances to make rare event more likely
+(result_is <- importance_sampling_mc(N = 1e7, 
+                   mu = c(-.1, .2, -.3, .1, 0),
+                   sigma = sqrt(c(.3, .3, .3, .2, .2)),
+                   mu_tilde = rep(0, 5),  # centered means
+                   sigma_tilde = rep(1, 5), # higher variance
+                   threshold = 20))
+
+vapply(2^seq(10, 14, 1), function(x) {attr(importance_sampling_mc(N = x, 
+                   mu = c(-.1, .2, -.3, .1, 0),
+                   sigma = sqrt(c(.3, .3, .3, .2, .2)),
+                   mu_tilde = rep(0, 5),  # centered means
+                   sigma_tilde = rep(1, 5), # higher variance
+                   threshold = 20), "positive cases")}, numeric(1))
+
+
+```
+
+
+```{r}
+set.seed(17)
+df <- tibble(N = 2^seq(10, 20)) %>%
+  mutate(mc = vapply(N, function(x) {basic_mc(
+                    N = x, 
+                    mu = c(-.1, .2, -.3, .1, 0),
+                    sigma = sqrt(c(.3, .3, .3, .2, .2)),
+                    threshold = 20)}, numeric(1)),
+         is = vapply(N, function(x) {importance_sampling_mc(
+                    N = x, 
+                    mu = c(-.1, .2, -.3, .1, 0),
+                    sigma = sqrt(c(.3, .3, .3, .2, .2)),
+                    mu_tilde = rep(0, 5),  # Shifted means
+                    sigma_tilde = rep(1, 5),
+                    threshold = 20)}, numeric(1))
+         )
+
+```
+
+
+```{r}
+df %>%
+  pivot_longer(-N, names_to = "method", values_to = "estimate") %>%
+  mutate(cases = N*estimate) %>%
+  ggplot(aes(N, cases, color = method)) +
+  geom_point() +
+  theme_light()
+
+
+df %>%
+  pivot_longer(-N, names_to = "method", values_to = "estimate") %>%
+  ggplot(aes(N, estimate, color = method)) +
+  geom_line() +
+  theme_light()
+```
+
