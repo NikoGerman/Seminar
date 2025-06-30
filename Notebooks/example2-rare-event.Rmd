@@ -7,6 +7,9 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
 ```
 
 ```{r}
@@ -26,13 +29,15 @@ basic_mc <- function(N, mu, sigma, threshold) {
   E_S <- sum(exp(mu + (sigma^2)/2))
   RE <- sd(indicator) / (p*sqrt(N))
   
+  
   structure(p,
             "positive cases" = sum(indicator),
             "average maximum element" = avg_max,
             "mean sum if S > threshold" = avg_sum, 
             "mean Sum" = mean_S,
             "expected Sum" = E_S,
-            "relative Error" = RE)
+            "relative Error" = ifelse(is.na(RE), 1, RE)
+            )
 }
 ```
 
@@ -99,7 +104,7 @@ importance_sampling_mc <- function(N, mu, sigma, mu_tilde, sigma_tilde, threshol
             "mean sum if S > threshold" = avg_sum, 
             "mean Sum" = mean_S,
             "expected Sum" = E_S,
-            "relative Error" = RE)
+            "relative Error" = ifelse(is.na(RE), 1, RE))
 }
 ```
 
@@ -112,20 +117,11 @@ importance_sampling_mc <- function(N, mu, sigma, mu_tilde, sigma_tilde, threshol
                    mu_tilde = rep(0, 5),  # centered means
                    sigma_tilde = rep(1, 5), # higher variance
                    threshold = 20))
-
-vapply(2^seq(10, 14, 1), function(x) {attr(importance_sampling_mc(N = x, 
-                   mu = c(-.1, .2, -.3, .1, 0),
-                   sigma = sqrt(c(.3, .3, .3, .2, .2)),
-                   mu_tilde = rep(0, 5),  # centered means
-                   sigma_tilde = rep(1, 5), # higher variance
-                   threshold = 20), "positive cases")}, numeric(1))
-
-
 ```
 
 
 ```{r}
-set.seed(17)
+set.seed(34)
 df <- tibble(N = 2^seq(10, 20)) %>%
   mutate(mc = vapply(N, function(x) {basic_mc(
                     N = x, 
@@ -136,27 +132,49 @@ df <- tibble(N = 2^seq(10, 20)) %>%
                     N = x, 
                     mu = c(-.1, .2, -.3, .1, 0),
                     sigma = sqrt(c(.3, .3, .3, .2, .2)),
-                    mu_tilde = rep(0, 5),  # Shifted means
-                    sigma_tilde = rep(1, 5),
-                    threshold = 20)}, numeric(1))
+                    mu_tilde = rep(1, 5),  # centered means
+                    sigma_tilde = rep(1, 5), # increased variance
+                    threshold = 20)}, numeric(1)),
+         mc.error = vapply(N, function(x) {attr(basic_mc(
+                    N = x, 
+                    mu = c(-.1, .2, -.3, .1, 0),
+                    sigma = sqrt(c(.3, .3, .3, .2, .2)),
+                    threshold = 20), "relative Error")}, numeric(1)),
+         is.error = vapply(N, function(x) {attr(importance_sampling_mc(
+                    N = x, 
+                    mu = c(-.1, .2, -.3, .1, 0),
+                    sigma = sqrt(c(.3, .3, .3, .2, .2)),
+                    mu_tilde = rep(1, 5),  # centered means
+                    sigma_tilde = rep(1, 5), # increased variance
+                    threshold = 20), "relative Error")}, numeric(1))
          )
 
 ```
 
 
 ```{r}
-df %>%
+plot_estimates <- df %>%
+  select(-mc.error, -is.error) %>%
   pivot_longer(-N, names_to = "method", values_to = "estimate") %>%
-  mutate(cases = N*estimate) %>%
-  ggplot(aes(N, cases, color = method)) +
-  geom_point() +
-  theme_light()
-
-
-df %>%
-  pivot_longer(-N, names_to = "method", values_to = "estimate") %>%
-  ggplot(aes(N, estimate, color = method)) +
+  ggplot(aes(log2(N), estimate, color = method)) +
+  scale_x_continuous(labels = scales::label_math(expr = 2^.x), n.breaks = 6) +
+  # scale_y_continuous(labels = scales::label_math(expr = 10^.x), n.breaks = 6) +
+  labs(x = "N", y = "estimate") +
   geom_line() +
   theme_light()
+
+plot_rel_errors <- df %>%
+  select(-mc, -is) %>%
+  rename(mc = mc.error, is = is.error) %>%
+  pivot_longer(-N, names_to = "method", values_to = "error") %>%
+  ggplot(aes(log2(N), error, color = method)) +
+  scale_x_continuous(labels = scales::label_math(expr = 2^.x), n.breaks = 6) +
+  # scale_y_continuous(labels = scales::label_math(expr = 10^.x), n.breaks = 6) +
+  labs(x = "N", y = "relative error") +
+  geom_path() +
+  theme_light()
+
+ggsave("../plots/ex2-estimates.png", plot_estimates, device = "png", width = 8, height = 4.5)
+ggsave("../plots/ex2-rel-errors.png", plot_rel_errors, device = "png", width = 8, height = 4.5)
 ```
 
