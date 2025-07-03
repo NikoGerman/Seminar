@@ -1,1 +1,127 @@
-<h1>hello!</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monte Carlo Methods - Interactive Examples</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            min-height: 100vh;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            font-size: 2.2rem;
+        }
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 2rem;
+            font-style: italic;
+        }
+        .author {
+            text-align: center;
+            color: #34495e;
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+        .examples-grid {
+            display: grid;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .example-card {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .example-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .example-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        .example-description {
+            color: #7f8c8d;
+            margin-bottom: 1rem;
+        }
+        .example-link {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+        .example-link:hover {
+            background: #2980b9;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 3rem;
+            color: #95a5a6;
+            border-top: 1px solid #ecf0f1;
+            padding-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Monte Carlo Methods and Random Sampling</h1>
+        <div class="subtitle">Interactive Examples and Implementations</div>
+        <div class="author">by Nikolai German</div>
+        
+        <div class="examples-grid">
+            <div class="example-card">
+                <div class="example-title">Monte Carlo Integration</div>
+                <div class="example-description">
+                    Basic Monte Carlo integration example computing an integral, illustrating convergence behavior and the integration-sampling duality.
+                </div>
+                <a href="https://nikogerman.github.io/Seminar/Notebooks/mc-integration.html" class="example-link">View Example</a>
+            </div>
+            
+            <div class="example-card">
+                <div class="example-title">Estimating &#960</div>
+                <div class="example-description">
+                    A comprehensive comparison of Monte Carlo methods for estimating &#960, including uniform sampling, importance sampling, quasi-Monte Carlo, and grid-based approaches.
+                </div>
+                <a href="https://nikogerman.github.io/Seminar/Notebooks/example1-estimating-pi.html" class="example-link">View Example</a>
+            </div>
+            
+            <div class="example-card">
+                <div class="example-title">Rare Event Estimation</div>
+                <div class="example-description">
+                    Portfolio risk analysis demonstrating the power of importance sampling for estimating tail probabilities and rare event simulation.
+                </div>
+                <a href="https://nikogerman.github.io/Seminar/Notebooks/example2-rare-event.html" class="example-link">View Example</a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>These examples complement the seminar paper on Monte Carlo methods, providing interactive implementations and detailed analyses of the discussed techniques.</p>
+        </div>
+    </div>
+</body>
+</html>
