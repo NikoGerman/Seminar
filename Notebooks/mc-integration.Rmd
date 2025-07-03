@@ -1,5 +1,5 @@
 ---
-title: "mc-integration2"
+title: "Monte Carlo Integration"
 author: "Nikolai German"
 date: "`r Sys.Date()`"
 output: html_document
@@ -49,12 +49,11 @@ generate_plot <- function(n) {
   labs(x = "U", y = "Expectation", title = sprintf("n = %d samples", n))
 }
 
-#f8766d for red and #83b0fc
-
 set.seed(42)
 plots <- lapply(c(5, 25, 75), generate_plot)
 
-(plots[[1]] | plots[[2]] | plots[[3]]) + plot_layout(axes = "collect")
+(p_mc_int1 = (plots[[1]] | plots[[2]] | plots[[3]]) + plot_layout(axes = "collect"))
+ggsave("../plots/mc-integration1.png", plot = p_mc_int1, device = "png", width = 8, height = 4.5)
 ```
 
 
@@ -74,7 +73,7 @@ df$est = vapply(df$n, mc_est, numeric(1))
 df$empirical = abs(df$est - 2)
 df$theoretical = 1/sqrt(df$n)
 
-df %>%
+(p_mc_int2 <- df %>%
   select(-est) %>%
   pivot_longer(-n, values_to = "val", names_to = "method") %>%
   ggplot(aes(log2(n), log2(val), color = method)) +
@@ -86,7 +85,9 @@ df %>%
        y = "Error", 
        title = "Estimation Error vs. Number of Samples",
        color = "") +
-  theme_light()
+  theme_light())
+
+ggsave("../plots/mc-integration2.png", plot = p_mc_int2, device = "png", width = 8, height = 4.5)
 ```
 
 
