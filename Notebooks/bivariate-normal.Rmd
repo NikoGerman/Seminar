@@ -1,23 +1,40 @@
 ---
-title: "Sampling from a bivariate normal distribution"
+title: "Sampling from a Bivariate Normal Distribution"
 author: "Nikolai German"
 date: "`r Sys.Date()`"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
 ---
-We want to show how to transform a bivariate standard normal distributed random variable $Z \sim \mathcal{N}_2(\boldsymbol{0}, I_2)$ into a normal distributed random variable $X$ with expectation $\boldsymbol{\mu}$ and variance structure $\Sigma$.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-First we construct $Z$ by sampling two equal length vectors of i.i.d. standard normal samples.
+# Introduction
+
+We demonstrate how to transform a bivariate standard normal random variable $Z \sim \mathcal{N}_2(\boldsymbol{0}, I_2)$ into a general bivariate normal random variable $X \sim \mathcal{N}_2(\boldsymbol{\mu}, \Sigma)$ using the Cholesky decomposition.
+
+## Mathematical Foundation
+
+The transformation is based on:
+$$X = \boldsymbol{\mu} + ZR$$
+where $R$ is the Cholesky factor of the covariance matrix $\Sigma = R^T R$.
+
+# Generating Standard Bivariate Normal Samples
+
+First we construct $Z$ by sampling two independent standard normal variables:
 
 ```{r}
 Z <- cbind(Z_1 = rnorm(100),
             Z_2 = rnorm(100))
 ```
 
-Checking the properties of the samples:
+## Verifying Standard Properties
+
+We check that our samples have the expected properties of standard bivariate normal variables:
 
 ```{r}
 # means
@@ -28,31 +45,39 @@ round(apply(Z, MARGIN = 2, var), 2)
 round(cov(Z[,1], Z[,2]), 2)
 ```
 
-Next, we initialize a vector of means $\boldsymbol{\mu}$ and a covariance matrix $\Sigma$.
+The results confirm approximately zero means, unit variances, and zero covariance.
+
+# Setting Target Parameters
+
+Next, we define the desired mean vector $\boldsymbol{\mu}$ and covariance matrix $\Sigma$:
 
 ```{r}
 Sigma <- matrix(c(5, 2, 2, 1), ncol = 2)
 mu <- c(-1, 1)
 ```
 
-The implementation of Cholesky decomposition `chol()` returns an upper right triangular matrix, rather than a lower left:
+# Cholesky Decomposition
 
-$$
-\Sigma = R^\top R
-$$
+We compute the Cholesky factor. Note that R's `chol()` function returns an upper triangular matrix:
 
 ```{r}
 (R <- chol(Sigma))
 ```
 
-Subsequently, we compute $X = \boldsymbol{\mu} + Z \cdot R$
+This gives us $\Sigma = R^T R$ where $R$ is upper triangular.
+
+# Transformation
+
+We apply the transformation $X = \boldsymbol{\mu} + ZR$:
 
 ```{r}
 X <- t(mu + t(Z %*% R))
 colnames(X) <- c("X_1", "X_2")
 ```
 
-We have a look at the properties of $X$:
+## Verifying Transformed Properties
+
+We check that the transformed samples have the desired properties:
 
 ```{r}
 round(colMeans(X), 2)
@@ -60,7 +85,11 @@ round(apply(X, MARGIN = 2, var), 2)
 round(cov(X[,1], X[,2]), 2)
 ```
 
-Lastly, we visualise $Z$ and $X$
+The results show that our transformation successfully produces samples with the target mean vector and covariance structure.
+
+# Visualization
+
+Finally, we visualize both the original standard bivariate normal samples and the transformed samples:
 
 ```{r}
 library(ggplot2)
@@ -85,8 +114,8 @@ p_02 <- ggplot() +
 (p <- (p_01 | p_02))
 ```
 
+The visualization clearly shows how the Cholesky transformation changes both the location (mean) and the shape/orientation (covariance structure) of the bivariate normal distribution.
 
 ```{r include=FALSE}
 ggsave("../plots/bivariate.png", p, device = "png", width = 12, height = 5)
 ```
-
