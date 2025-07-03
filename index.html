@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monte Carlo Methods - Interactive Examples</title>
+    <title>Monte Carlo Methods and Random Sampling - Examples</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -93,34 +93,66 @@
         <div class="subtitle">Examples and Implementations</div>
         <div class="author">by Nikolai German</div>
         
-        <div class="examples-grid">
-            <div class="example-card">
-                <div class="example-title">Monte Carlo Integration</div>
-                <div class="example-description">
-                    Basic Monte Carlo integration example computing an integral, illustrating convergence behavior and the integration-sampling duality.
+        <div style="margin-bottom: 2rem;">
+            <h2 style="color: #2c3e50; font-size: 1.5rem; margin-bottom: 1rem;">Monte Carlo Integration</h2>
+            <div class="examples-grid">
+                <div class="example-card">
+                    <div class="example-title">Monte Carlo Integration</div>
+                    <div class="example-description">
+                        Basic Monte Carlo integration example computing an integral, illustrating convergence behavior and the integration-sampling duality.
+                    </div>
+                    <a href="https://nikogerman.github.io/Seminar/Notebooks/mc-integration.html" class="example-link">View Example</a>
                 </div>
-                <a href="https://nikogerman.github.io/Seminar/Notebooks/mc-integration.html" class="example-link">View Example</a>
+                
+                <div class="example-card">
+                    <div class="example-title">Estimating π</div>
+                    <div class="example-description">
+                        A comprehensive comparison of Monte Carlo methods for estimating π, including uniform sampling, importance sampling, quasi-Monte Carlo, and grid-based approaches.
+                    </div>
+                    <a href="https://nikogerman.github.io/Seminar/Notebooks/example1-estimating-pi.html" class="example-link">View Example</a>
+                </div>
+                
+                <div class="example-card">
+                    <div class="example-title">Rare Event Estimation</div>
+                    <div class="example-description">
+                        Portfolio risk analysis demonstrating the power of importance sampling for estimating tail probabilities and rare event simulation.
+                    </div>
+                    <a href="https://nikogerman.github.io/Seminar/Notebooks/example2-rare-event.html" class="example-link">View Example</a>
+                </div>
             </div>
-            
-            <div class="example-card">
-                <div class="example-title">Estimating &#960</div>
-                <div class="example-description">
-                    A comprehensive comparison of Monte Carlo methods for estimating &#960, including uniform sampling, importance sampling, quasi-Monte Carlo, and grid-based approaches.
+        </div>
+        
+        <div>
+            <h2 style="color: #2c3e50; font-size: 1.5rem; margin-bottom: 1rem;">Random Sampling Methods</h2>
+            <div class="examples-grid">
+                <div class="example-card">
+                    <div class="example-title">Inversion Method</div>
+                    <div class="example-description">
+                        Inverse transform sampling technique for generating random samples from any distribution using its cumulative distribution function.
+                    </div>
+                    <a href="https://nikogerman.github.io/Seminar/Notebooks/inversion-method.html" class="example-link">View Example</a>
                 </div>
-                <a href="https://nikogerman.github.io/Seminar/Notebooks/example1-estimating-pi.html" class="example-link">View Example</a>
-            </div>
-            
-            <div class="example-card">
-                <div class="example-title">Rare Event Estimation</div>
-                <div class="example-description">
-                    Portfolio risk analysis demonstrating the power of importance sampling for estimating tail probabilities and rare event simulation.
+                
+                <div class="example-card">
+                    <div class="example-title">Box-Muller Method</div>
+                    <div class="example-description">
+                        Classic transformation method for generating standard normal random variables from uniform random variables using polar coordinates.
+                    </div>
+                    <a href="https://nikogerman.github.io/Seminar/Notebooks/box-muller.html" class="example-link">View Example</a>
                 </div>
-                <a href="https://nikogerman.github.io/Seminar/Notebooks/example2-rare-event.html" class="example-link">View Example</a>
+                
+                <div class="example-card">
+                    <div class="example-title">Bivariate Normal Sampling</div>
+                    <div class="example-description">
+                        Demonstration of generating correlated bivariate normal samples using Cholesky decomposition to transform independent standard normal variables.
+                    </div>
+                    <a href="https://nikogerman.github.io/Seminar/Notebooks/bivariate-normal.html" class="example-link">View Example</a>
+                </div>
             </div>
         </div>
         
         <div class="footer">
-            <p>These examples complement the seminar paper on Monte Carlo methods, providing interactive implementations and detailed analyses of the discussed techniques.</p>
+            <p>These examples complement the seminar paper on Monte Carlo methods and random sampling, providing implementations and detailed analyses of both integration techniques and fundamental sampling methods.</p>
         </div>
     </div>
 </body>
