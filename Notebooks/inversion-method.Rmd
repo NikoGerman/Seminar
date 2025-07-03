@@ -1,13 +1,33 @@
 ---
-title: "Inversion method"
+title: "Inversion Method"
 author: "Nikolai German"
 date: "`r Sys.Date()`"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+# Introduction
+
+The inversion method (also called inverse transform sampling) is a fundamental technique for generating random samples from any distribution given its cumulative distribution function (CDF). The method exploits the fact that if $U \sim \text{Unif}(0,1)$ and $F$ is a CDF, then $F^{-1}(U)$ follows the distribution with CDF $F$.
+
+## Mathematical Foundation
+
+For a random variable $X$ with CDF $F_X(x)$, we can generate samples by:
+1. Generate $U \sim \text{Unif}(0,1)$
+2. Set $X = F_X^{-1}(U)$
+
+Then $X$ follows the desired distribution.
+
+# Visualization of the Inversion Method
+
+We demonstrate the inversion method using the exponential distribution:
 
 ```{r}
 library(tibble)
@@ -48,11 +68,15 @@ p.dist <- ggplot(as_tibble(qexp(U)), aes(value)) +
 (p.inversion <- (p.construction / p.dist) + plot_layout(axes = "collect") + plot_annotation(title = "inversion method for exponential distributed random variable"))
 ```
 
+The visualization shows how uniform random values (horizontal lines) are transformed through the inverse CDF to produce samples that follow the exponential distribution.
 
 ```{r include=FALSE}
 ggsave("../plots/inversion.png", p.inversion, device = "png")
 ```
 
+# General Implementation
+
+We implement a general function for inverse CDF sampling:
 
 ```{r}
 inverse.cdf.sample <- function(inverse.cdf, N, ...) {
@@ -62,18 +86,38 @@ inverse.cdf.sample <- function(inverse.cdf, N, ...) {
   X <- inverse.cdf(p = U, ...)
   return(X)
 }
+```
 
+## Custom Inverse CDF for Exponential Distribution
+
+We implement the inverse CDF for the exponential distribution:
+
+```{r}
 inv.exp <- function(p, lambda) {
   -log(1-p)/lambda
 }
+```
 
+# Testing with Different Parameters
+
+We test our implementation with various exponential distribution parameters:
+
+```{r}
 par(mfrow = c(2,2))
 for (lambda in c(.5, 1, 2, 4)) {
   exp.sample <- inverse.cdf.sample(inv.exp, 100000, lambda = lambda)
   hist(exp.sample, freq = FALSE, xlim = c(0,10), ylim = c(0,lambda), xlab = "x", main = sprintf("lambda = %.1f", lambda))
   curve(dexp(x, rate = lambda), add = TRUE, col = "blue", lwd = 2)
 }
+```
 
+The histograms show excellent agreement between our generated samples and the theoretical exponential densities (blue curves) for different rate parameters.
+
+# Using Built-in Inverse CDFs
+
+The method also works with R's built-in quantile functions, even for distributions without analytical inverse CDFs:
+
+```{r}
 # works in R even with non-analytically functions
 par(mfrow = c(2,2))
 for (mean in c(-2, 5)) {
@@ -85,3 +129,4 @@ for (mean in c(-2, 5)) {
 }
 ```
 
+This demonstrates the versatility of the inversion method - it works equally well with both analytical inverse CDFs and numerical approximations, making it a powerful general-purpose sampling technique.
