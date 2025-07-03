@@ -1,9 +1,14 @@
 ---
-title: 'Example 1: Estimating $\pi$'
+title: 'Estimating $\pi$: A Comprehensive Comparison of Monte Carlo Methods'
 author: "Nikolai German"
 date: "`r Sys.Date()`"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
 ---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 # install.packages("SobolSequence")
@@ -13,9 +18,27 @@ library(dplyr)
 library(tidyr)
 ```
 
-We want to estimate $\pi$ by sampling points from $[-1,1] \times [-1,1]$ in combination with the indicator function $\mathbf{1}(X^2 + Y^2 \leq 1)$.
+# Introduction
 
-1. Standard Monte Carlo
+We demonstrate different sampling strategies through the well-known problem of estimating $\pi$ by approximating the area of a unit circle inscribed in a square. This classic problem illustrates the integration-sampling duality that underlies all Monte Carlo methods.
+
+## Mathematical Foundation
+
+Since the unit circle has area $\pi$ and the enclosing square $[-1,1] \times [-1,1]$ has area 4, we can estimate:
+$$\pi = 4 \cdot \mathbb{P}(X^2 + Y^2 \leq 1)$$
+where $(X,Y)$ are sampled from the square.
+
+From an integration perspective, we want to evaluate:
+$$\pi = \int_{-1}^{1} \int_{-1}^{1} \mathbf{1}(x^2 + y^2 \leq 1) \, dx \, dy$$
+
+This demonstrates the fundamental equivalence $\mathbb{E}[f(X)] = \int f(x)p(x)dx$ - every integration problem can be reformulated as an expectation estimation problem.
+
+# Implementation
+
+We compare four different approaches: uniform Monte Carlo, importance sampling, quasi-Monte Carlo, and grid-based integration.
+
+## 1. Standard Monte Carlo
+
 ```{r}
 estimate_pi_mc <- function(N) {
   checkmate::assertNumeric(N, min.len = 1, any.missing = FALSE)
@@ -33,7 +56,10 @@ estimate_pi_mc <- function(N) {
 }
 ```
 
-2. Importance Sampling
+This approach samples $(X,Y)$ uniformly from $[-1,1]^2$ and estimates $\hat{\pi} = 4 \cdot \frac{\text{points inside circle}}{N}$. This is essentially rejection sampling with expected $O(N^{-1/2})$ convergence.
+
+## 2. Importance Sampling
+
 ```{r}
 estimate_pi_is <- function(N) {
   checkmate::assertNumeric(N, min.len = 1, any.missing = FALSE)
@@ -52,7 +78,10 @@ estimate_pi_is <- function(N) {
 }
 ```
 
-3. Quasi-Monte Carlo
+We sample from $\mathcal{N}(0, \sigma^2 I_2)$ with $\sigma = 1/3$ and use the estimator $\hat{\pi} = \frac{1}{N}\sum_{i=1}^N \frac{\mathbf{1}(X_i^2 + Y_i^2 \leq 1)}{f(X_i, Y_i)}$. The normal distribution concentrates probability mass near the origin where most circle points are located.
+
+## 3. Quasi-Monte Carlo
+
 ```{r}
 estimate_pi_qmc <- function(N) {
   checkmate::assertNumeric(N, min.len = 1, any.missing = FALSE)
@@ -71,7 +100,10 @@ estimate_pi_qmc <- function(N) {
 }
 ```
 
-4. Equidistant grid
+Sobol sequences are designed to minimize gaps and clusters, providing superior space-filling properties compared to random sampling. For smooth integrands, QMC often achieves better than $O(N^{-1/2})$ convergence rates.
+
+## 4. Equidistant Grid
+
 ```{r}
 estimate_pi_grid <- function(N) {
   checkmate::assertNumeric(N, min.len = 1, any.missing = FALSE)
@@ -92,7 +124,12 @@ estimate_pi_grid <- function(N) {
 }
 ```
 
-Let's look at the diffenrent sampling approaches, using 1024 samples each.
+Traditional deterministic quadrature evaluation on an equidistant grid. This performs well in low dimensions but suffers from the curse of dimensionality.
+
+# Visualization of Sampling Strategies
+
+Let's look at the different sampling approaches, using 1024 samples each.
+
 ```{r}
 set.seed(123)
 
@@ -120,11 +157,16 @@ p_grid <- p_mc %+% samples_grid + ggtitle("Equidistant Grid")
 (p_samples <- (p_grid | p_mc) / (p_is | p_qmc))
 ```
 
+The visualization shows the key differences: uniform sampling exhibits clustering and gaps, normal sampling concentrates points near the origin, Sobol sequences achieve systematic coverage, while the grid provides deterministic regular placement.
+
 ```{r eval=FALSE, include=FALSE}
 ggsave("../plots/ex1-samples.png", p_samples, device = "png")
 ```
 
+# Convergence Analysis
+
 Finally, visualize the convergence of the error $|\hat{\pi} - \pi|$:
+
 ```{r}
 set.seed(123)
 df <- tibble(N = 2^seq(10, 26, by = 2)) %>%
@@ -150,7 +192,16 @@ df <- tibble(N = 2^seq(10, 26, by = 2)) %>%
   theme_light())
 ```
 
+## Results and Interpretation
+
+**Sobol sequences** demonstrate superior performance with consistently lower errors due to their space-filling properties. **Uniform Monte Carlo** exhibits the expected $O(N^{-1/2})$ convergence with random fluctuations. **Importance sampling** performs competitively but doesn't significantly outperform uniform sampling, suggesting the normal distribution with $\sigma = 1/3$ may not provide optimal variance reduction for this problem. The **grid approach** performs reasonably well, since the dimension $d=2$ is small enough to avoid severe curse of dimensionality effects.
 
 ```{r eval=FALSE, include=FALSE}
 ggsave("../plots/ex1-estimation-error.png", p_estimation_error, device = "png")
 ```
+
+# Integration-Sampling Duality
+
+This example perfectly illustrates the fundamental equivalence between Monte Carlo integration and sampling. From the integration perspective, we approximate $\int_{-1}^1 \int_{-1}^1 \mathbf{1}(x^2 + y^2 \leq 1) \, dx \, dy = \pi$ using the estimator $\frac{4}{N}\sum_{i=1}^N \mathbf{1}(X_i^2 + Y_i^2 \leq 1)$. From the sampling perspective, we estimate $\mathbb{E}[\mathbf{1}(X^2 + Y^2 \leq 1)]$ where $(X,Y) \sim \text{Uniform}([-1,1]^2)$.
+
+The identity $\mathbb{E}[f(X)] = \int f(x)p(x)dx$ reveals that expectation estimation and integration are equivalent—every Monte Carlo integration can be reframed as sampling from an appropriate distribution and computing sample averages.
