@@ -2,7 +2,11 @@
 title: "Monte Carlo Integration"
 author: "Nikolai German"
 date: "`r Sys.Date()`"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
 ---
 
 ```{r setup, include=FALSE}
@@ -13,22 +17,25 @@ library(ggplot2)
 library(patchwork)
 ```
 
+# Introduction
 
+We want to compute the integral $I = \int_0^{\pi} \sin(x) \, dx$, for which we know the true value is 2.
 
-We want to compute the Integral $\mathcal{I} = \int_0^{\pi} sin(x) \, dx$, for which we know the true value is 2.
-
-We use substitution with $u = g(x) = \frac{x}{\pi}$, to set the integration domain to the one dimensional unit hypercube. Thus we obtain $du = g'(x) \, dx = \frac{1}{\pi} \, dx$.
+We use substitution with $u = g(x) = \frac{x}{\pi}$ to transform the integration domain to the unit interval $[0,1]$. With $du = g'(x) \, dx = \frac{1}{\pi} \, dx$, we obtain:
 
 \begin{align*}
-  \int_0^{\pi} sin(x) \, dx 
-  &= \pi \cdot \int_0^\pi sin(x) \frac{1}{\pi} \, dx \\
-  &= \pi \cdot \int_{g(0)}^{g(\pi)} sin(\pi \frac{x}{\pi}) \frac{1}{\pi} \, dx \\
-  &= \pi \cdot \int_{0}^{1} sin(\pi u) \, du \\
-  & \approx \frac{\pi}{n} \sum_{i=1}^n sin(\pi U_i)
+  \int_0^{\pi} \sin(x) \, dx 
+  &= \pi \cdot \int_0^\pi \sin(x) \frac{1}{\pi} \, dx \\
+  &= \pi \cdot \int_{g(0)}^{g(\pi)} \sin(\pi \cdot \frac{x}{\pi}) \, du \\
+  &= \pi \cdot \int_{0}^{1} \sin(\pi u) \, du \\
+  & \approx \frac{\pi}{n} \sum_{i=1}^n \sin(\pi U_i)
 \end{align*}
 
-with $U_i \overset{i.i.d.}{\sim} \text{Unif}(0, 1)$.
+where $U_i \overset{i.i.d.}{\sim} \text{Unif}(0, 1)$ for all $i = 1,...,n$.
 
+# Visualization of Monte Carlo Integration
+
+The following code demonstrates how Monte Carlo integration approximates the integral using different sample sizes:
 
 ```{r}
 sin_pi = function(x) pi*sin(pi*x)
@@ -53,10 +60,18 @@ set.seed(42)
 plots <- lapply(c(5, 25, 75), generate_plot)
 
 (p_mc_int1 = (plots[[1]] | plots[[2]] | plots[[3]]) + plot_layout(axes = "collect"))
-ggsave("../plots/mc-integration1.png", plot = p_mc_int1, device = "png", width = 8, height = 4.5)
 ```
 
 
+```{r include=FALSE}
+ggsave("../plots/mc-integration1.png", plot = p_mc_int1, device = "png", width = 8, height = 4.5)
+```
+
+The plots show how the Monte Carlo estimate (blue dashed line) converges to the true value (red area) as the sample size increases. Each blue point represents a function evaluation at a random point.
+
+# Convergence Analysis
+
+We now analyze the convergence behavior of the Monte Carlo estimator:
 
 ```{r}
 mc_est <- function(n) {
@@ -86,8 +101,11 @@ df$theoretical = 1/sqrt(df$n)
        title = "Estimation Error vs. Number of Samples",
        color = "") +
   theme_light())
-
-ggsave("../plots/mc-integration2.png", plot = p_mc_int2, device = "png", width = 8, height = 4.5)
 ```
 
 
+```{r include=FALSE}
+ggsave("../plots/mc-integration2.png", plot = p_mc_int2, device = "png", width = 8, height = 4.5)
+```
+
+The convergence plot compares the empirical error (blue) with the theoretical $O(N^{-1/2})$ rate (red). The close alignment confirms that our Monte Carlo estimator exhibits the expected convergence behavior predicted by the Central Limit Theorem.
