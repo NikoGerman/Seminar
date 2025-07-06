@@ -45,6 +45,11 @@ The examples are implemented in R using R Markdown notebooks, showcasing:
 
 ```
 ├── Paper.pdf                     # Seminar paper (PDF)
+├── Latex/                        # LaTeX source code for the paper
+│   ├── thesis.tex                   # Main LaTeX document
+│   ├── chapters/                  # individual chapters of the paper
+│   ├── figures/                   # Generated figures (used in paper)
+│   └── ...                       # Additional LaTeX files
 ├── Notebooks/                    # R Markdown source files
 │   ├── mc-integration.Rmd         # Monte Carlo integration
 │   ├── example1-estimating-pi.Rmd # π estimation comparison
@@ -52,7 +57,6 @@ The examples are implemented in R using R Markdown notebooks, showcasing:
 │   ├── inversion-method.Rmd       # Inverse transform sampling
 │   ├── box-muller.Rmd            # Box-Muller method
 │   └── bivariate-normal.Rmd      # Bivariate normal sampling
-├── plots/                        # Generated figures (used in paper)
 └── index.html                    # Main landing page with paper and examples
 ```
 
