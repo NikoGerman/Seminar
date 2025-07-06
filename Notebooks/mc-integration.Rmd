@@ -64,7 +64,7 @@ plots <- lapply(c(5, 25, 75), generate_plot)
 
 
 ```{r include=FALSE}
-ggsave("../plots/mc-integration1.png", plot = p_mc_int1, device = "png", width = 8, height = 4.5)
+ggsave("../Latex/figures/mc-integration1.png", plot = p_mc_int1, device = "png", width = 8, height = 4.5)
 ```
 
 The plots show how the Monte Carlo estimate (blue dashed line) converges to the true value (red area) as the sample size increases. Each blue point represents a function evaluation at a random point.
@@ -105,7 +105,7 @@ df$theoretical = 1/sqrt(df$n)
 
 
 ```{r include=FALSE}
-ggsave("../plots/mc-integration2.png", plot = p_mc_int2, device = "png", width = 8, height = 4.5)
+ggsave("../Latex/figures/mc-integration2.png", plot = p_mc_int2, device = "png", width = 8, height = 4.5)
 ```
 
 The convergence plot compares the empirical error (blue) with the theoretical $O(N^{-1/2})$ rate (red). The close alignment confirms that our Monte Carlo estimator exhibits the expected convergence behavior predicted by the Central Limit Theorem.

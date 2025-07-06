@@ -1,0 +1,254 @@
+\documentclass[12pt]{article}
+
+\usepackage[]{graphicx}
+\usepackage[]{color}
+\usepackage{alltt}
+
+\newcommand{\mytitle}{Monte Carlo Methods and Random Sampling}
+\newcommand{\myname}{Nikolai German}
+\newcommand{\mysupervisor}{Dr. Ludwig Bothmann}
+
+\usepackage[a4paper, width = 160mm, top = 35mm, bottom = 30mm, 
+bindingoffset = 0mm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{ragged2e}
+\usepackage{xcolor}
+\usepackage[round, comma]{natbib}
+\usepackage{fancyhdr}
+\newcommand{\changefont}{%
+    \fontsize{8}{11}\selectfont
+}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks = true,
+  linkcolor = black,
+  urlcolor = black,
+  citecolor = black}
+\pagestyle{fancy}
+\fancyhead{}
+\fancyhead[R]{\changefont{\mytitle}}
+\fancyfoot{}
+\fancyfoot[R]{\thepage}
+\setlength{\headheight}{14.5pt}
+\setlength{\parindent}{0pt}
+\interfootnotelinepenalty = 10000
+
+\usepackage{amsthm}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{mathtools}  % amsmath with extensions
+\usepackage{amsfonts}  % (otherwise \mathbb does nothing)
+\usepackage{subcaption}
+
+%\newtheorem{theorem}{Theorem}[section]
+%\newtheorem{corollary}{Corollary}[theorem]
+%\newtheorem{lemma}[theorem]{Lemma}
+%\newtheorem{example}{Example}[section]
+%\theoremstyle{definition}
+%\newtheorem{definition}{Definition}[section]
+
+\usepackage{apxproof}
+\renewcommand{\appendixprelim}[1]{}
+\newtheoremrep{theorem}{Theorem}[section]
+\newtheoremrep{corollary}{Corollary}[theorem]
+\newtheoremrep{lemma}[theorem]{Lemma}
+\newtheorem{example}{Example}[section]
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+
+
+% ------------------------------------------------------------------------------
+% MAIN -------------------------------------------------------------------------
+% ------------------------------------------------------------------------------
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\begin{document}
+
+% FRONT PAGE -------------------------------------------------------------------
+ 
+\begin{titlepage}
+\begin{center}
+    
+\LARGE
+Seminar Paper
+    
+\vspace{0.5cm}
+      
+\rule{\textwidth}{1.5pt}
+\LARGE
+\textbf{\mytitle}
+\rule{\textwidth}{1.5pt}
+   
+\vspace{0.5cm}
+      
+\large
+Department of Statistics \\
+Ludwig-Maximilians-Universität München 
+
+\vfill
+
+\Large
+\textbf{\myname}
+
+\vfill
+
+\large
+Munich, July 6\textsuperscript{th}, 2025
+      
+\vfill
+
+\includegraphics[width = 0.4\textwidth]{sigillum.png}
+
+\vfill
+
+\normalsize
+Submitted in partial fulfillment of the requirements for the degree of B. Sc.
+\\
+
+Supervised by \mysupervisor
+
+\end{center}
+\end{titlepage}
+
+% CONTENTS ---------------------------------------------------------------------
+
+\pagenumbering{Roman}
+\newpage
+
+\begin{abstract}
+Monte Carlo methods provide essential computational tools for solving high-dimensional integration and sampling problems that are analytically intractable. This paper presents a comprehensive treatment of Monte Carlo techniques, beginning with fundamental integration principles and the curse of dimensionality that motivates probabilistic approaches. We systematically develop key sampling algorithms including the inversion method, Box-Muller transformation, and acceptance-rejection techniques, providing both basic and adaptive variants. We present different variance reduction strategies: most importantly importance sampling (direct and self-normalized variants). We complement pseudo-random approaches with quasi-Monte Carlo methods for improved convergence rates. Practical effectiveness is demonstrated through classical applications including $\pi$ approximation and rare event estimation in financial risk models, where importance sampling achieves dramatic efficiency gains over standard approaches. The paper concludes with a critical assessment of advantages and limitations, along with an outlook toward advanced methods including sequential importance sampling and Markov Chain Monte Carlo.
+\end{abstract}
+
+\newpage
+\tableofcontents
+
+%%%% if you would want to include material overview
+%%%% use one of the following in addition
+% \newpage
+% \listoffigures
+% \newpage
+% \listoftables
+\newpage
+
+% CHAPTERS ---------------------------------------------------------------------
+
+\pagenumbering{arabic}
+    
+\section{Introduction}
+\label{intro}
+\input{chapters/Introduction}
+
+\section{Monte Carlo Integration}
+\label{MC-Integration}
+\input{chapters/MC-Integration}
+
+\section{Sampling from Known Distributions}
+\label{sampling}
+\input{chapters/sampling}
+
+\section{Variance Reduction Techniques}
+\label{variance-control}
+\input{chapters/variance-control}
+
+\section{Quasi Monte Carlo}
+\label{QMC}
+\input{chapters/QMC}
+
+\section{Applications}
+\label{applications}
+\input{chapters/applications}
+
+\section{Conclusion}
+\label{conclusion}
+\input{chapters/conclusion}
+
+\newpage
+    
+% ------------------------------------------------------------------------------
+% BIBLIOGRAPHY -----------------------------------------------------------------
+% ------------------------------------------------------------------------------
+
+\RaggedRight
+\bibliography{bibliography}
+\bibliographystyle{dcu}
+\newpage
+
+% ------------------------------------------------------------------------------
+% DECLARATION OF AUTHORSHIP-----------------------------------------------------
+% ------------------------------------------------------------------------------
+
+
+\Large
+\noindent
+\textbf{Declaration of authorship} 
+\vspace{0.5cm}
+\noindent
+\normalsize
+
+I hereby declare that the report submitted is my own unaided work. All direct 
+or indirect sources used are acknowledged as references. I am aware that the 
+Thesis in digital form can be examined for the use of unauthorized aid and in 
+order to determine whether the report as a whole or parts incorporated in it may 
+be deemed as plagiarism. For the comparison of my work with existing sources I 
+agree that it shall be entered in a database where it shall also remain after 
+examination, to enable comparison with future Theses submitted. Further rights 
+of reproduction and usage, however, are not granted here. This paper was not 
+previously presented to another examination board and has not been published.
+\\
+
+\vspace{1cm}
+Munich, July 6, 2025
+
+\vspace{3cm}
+
+\noindent\rule{0.5\textwidth}{0.4pt} \\
+Nikolai German
+
+% ------------------------------------------------------------------------------
+\newpage
+
+
+% ------------------------------------------------------------------------------
+% AI USAGE -----------------------------------------------------
+% ------------------------------------------------------------------------------
+
+\Large
+\noindent
+\textbf{Usage of Artificial Intelligence} 
+\vspace{0.5cm}
+\noindent
+\normalsize
+
+In the preparation of this paper, I utilized two Artificial Intelligence (AI) tools:
+
+\begin{itemize}
+    \item \textbf{Claude Sonnet 4}: Primarily used for proofreading draft chapters and improving readability and narrative flow. It was also used for LaTeX formatting tasks. Additionally, Claude was responsible for the complete implementation of the HTML index page that accompanies the paper, including all HTML/CSS/JavaScript code.
+    
+    \item \textbf{DeepL}: Used for proofreading chapter drafts and generating alternative formulations and explanations for individual text passages.
+\end{itemize}
+
+
+% ------------------------------------------------------------------------------
+\newpage
+
+% ------------------------------------------------------------------------------
+% APPENDIX ---------------------------------------------------------------------
+% ------------------------------------------------------------------------------
+    
+\pagenumbering{Roman}
+
+\setcounter{page}{1} % CHANGE
+
+\appendix
+
+\section{Appendix}
+\label{app}
+\input{chapters/appendix}
+\newpage
+
+
+\section{Electronic appendix}
+\label{el_app}
+
+Data, code and figures can be found on \href{https://github.com/NikoGerman/Seminar}{\color{blue}github.com}.
+
+\end{document}

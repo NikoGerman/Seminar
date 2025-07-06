@@ -71,7 +71,7 @@ p.dist <- ggplot(as_tibble(qexp(U)), aes(value)) +
 The visualization shows how uniform random values (horizontal lines) are transformed through the inverse CDF to produce samples that follow the exponential distribution.
 
 ```{r include=FALSE}
-ggsave("../plots/inversion.png", p.inversion, device = "png")
+ggsave("../Latex/figures/inversion.png", p.inversion, device = "png")
 ```
 
 # General Implementation

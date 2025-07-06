@@ -1,0 +1,154 @@
+\subsection{Mathematical Foundations}
+\label{appendix:probability-theory}
+
+This section provides essential mathematical concepts.
+
+\subsubsection{Probability Theory}
+
+\paragraph{Central Limit Theorem and Law of Large Numbers}
+\label{appendix:clt}
+
+The Strong Law of Large Numbers provides the fundamental justification for Monte Carlo methods. If $X_1, X_2, \ldots$ are independent and identically distributed random variables with finite mean $\mu$, then:
+\begin{equation*}
+    \bar{X}_n = \frac{1}{n}\sum_{i=1}^n X_i \xrightarrow{a.s.} \mu \quad \text{as } n \to \infty
+\end{equation*}
+
+The Central Limit Theorem establishes the rate of convergence and enables uncertainty quantification. For the same sequence with finite variance $\sigma^2$:
+\begin{equation*}
+    \bar{X}_n \xrightarrow{d} \mathcal{N}(\mu, \sigma^2/n) \quad \text{as } n \to \infty
+\end{equation*}
+
+
+\paragraph{Bivariate Change of Variables}
+\label{appendix:change_of_vars}
+
+For a bijective transformation $(Y_1,Y_2) = T(X_1,X_2)$ with inverse $H = T^{-1}$, the joint PDF transforms as:
+\begin{equation*}
+    f_{Y_1,Y_2}(y_1,y_2) = f_{X_1,X_2}(H(y_1,y_2)) \left|J_H(y_1,y_2)\right|
+\end{equation*}
+
+where $\left|J_H(y_1,y_2)\right|$ is the absolute determinant of the Jacobian matrix of $H$. This transformation rule is essential for deriving sampling methods like the Box-Muller transform.
+
+\paragraph{Rayleigh Distribution}
+\label{appendix:rayleigh}
+
+The Rayleigh distribution with scale parameter $\sigma > 0$ has PDF:
+
+\begin{equation*}
+    f(x; \sigma) = 
+        \begin{cases}
+        \frac{x}{\sigma^2} \exp\left(\frac{-x^2}{2\sigma^2}\right) & x \geq 0\\
+        0 & x < 0
+    \end{cases}
+\end{equation*}
+
+
+and CDF:
+
+\begin{equation*}
+    F(x; \sigma) = 
+        \begin{cases}
+        1 - \exp\left(\frac{-x^2}{2\sigma^2}\right) & x \geq 0\\
+        0 & x < 0
+    \end{cases}
+\end{equation*}
+
+The Rayleigh distribution is related to the exponential distribution: if $X \sim \text{Exp}(\lambda)$, then $\sqrt{X} \sim \text{Rayleigh}\left(\frac{1}{\sqrt{2\lambda}}\right)$.
+
+\subsubsection{Linear Algebra}
+\label{appendix:linear-algebra}
+
+\paragraph{Positive Definite Matrices and Cholesky Decomposition}
+\label{appendix:Cholesky}
+
+A symmetric matrix $\Sigma \in \mathbb{R}^{d \times d}$ is positive definite if $x^T\Sigma x > 0$ for all non-zero vectors $x \in \mathbb{R}^d$. Every positive definite matrix admits a unique Cholesky decomposition $\Sigma = LL^T$, where $L$ is lower triangular with positive diagonal entries.
+
+\subsection{Computational Methods}
+\label{appendix:computational-methods}
+
+This section covers computational techniques for implementing Monte Carlo methods.
+
+\subsubsection{Low Discrepancy Sequences}
+\label{appendix:low_discrepancy}
+
+Low discrepancy sequences provide deterministic point sets with superior uniformity compared to pseudo-random sequences. The discrepancy of a sequence $P = \{x_1, \ldots, x_N\}$ in $[0,1)^d$ measures deviation from uniformity:
+\begin{equation*}
+D(P, \mathcal{F}) = \sup_{B \in \mathcal{F}} \left| \frac{\#(B \cap P)}{N} - \text{vol}(B) \right|
+\end{equation*}
+where $\mathcal{F}$ is typically a family of rectangular test sets.
+
+\textbf{Sobol sequences} are particularly effective in moderate to high dimensions and widely used in financial applications. \textbf{Halton sequences} are simpler to generate and perform well in low dimensions, but quality deteriorates in higher dimensions due to coordinate correlations.
+
+While standard Monte Carlo achieves $\mathcal{O}(N^{-1/2})$ convergence, low discrepancy sequences can achieve $\mathcal{O}((\log N)^d/N)$ for smooth integrands—a significant improvement in moderate dimensions, though the curse of dimensionality limits benefits as $d$ increases.
+
+\subsubsection{Random Number Generation}
+\label{appendix:rng}
+
+The Lehmer generator provides a foundation for pseudo-random number generation using the recurrence $X_{n+1} = (a \cdot X_n) \bmod m$. A standard implementation uses multiplier $a = 7^5$ and modulus $m = 2^{31} - 1$:
+
+\begin{algorithm}
+\caption{Lehmer Random Number Generator}\label{algo:lehmer-rng}
+\begin{algorithmic}
+    \Require $X_0 > 0$ \Comment{Initial seed}
+    \State $a \gets 7^5, $m \gets 2^{31} - 1$
+    \State $X \gets X_0$
+    \Loop
+        \State $X \gets (a \cdot X) \bmod m$
+        \State $U \gets X / m$ \Comment{Convert to uniform on $(0,1)$}
+        \State \Return $U$
+    \EndLoop
+\end{algorithmic}
+\end{algorithm}
+
+The choice of parameters $a$ and $m$ is crucial for achieving good statistical properties and full period length (see \cite{lemieux_monte_2009}).
+
+\subsection{Algorithms}
+\label{appendix:algos}
+
+\begin{algorithm}
+\caption{Box-Muller Transform}\label{algo:box-muller}
+\begin{algorithmic}
+    \State $U_1, U_2 \gets$ \Call{runif\_01}{2} \Comment{Generate two uniform random variables}
+    \State $R \gets \sqrt{-2 \ln(U_1)}$ \Comment{Transform to radius}
+    \State $\Theta \gets 2\pi U_2$ \Comment{Transform to angle}
+    \State $X_1 \gets R \cos(\Theta)$ \Comment{First standard normal sample}
+    \State $X_2 \gets R \sin(\Theta)$ \Comment{Second standard normal sample}
+    \State \Return $(X_1, X_2)$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\caption{Acceptance-Rejection Sampling}\label{algo:acceptance-rejection}
+\begin{algorithmic}
+    \Repeat
+        \State $\tilde{X} \gets$ \Call{rand\_r()}{} \Comment{Sample from density $r(x)$}
+        \State $U \gets$ \Call{runif\_01}{1} \Comment{Generate uniform random variable}
+        \State $\alpha \gets p(\tilde{X})/t(\tilde{X})$ \Comment{Calculate acceptance probability}
+    \Until{$U \leq \alpha$} \Comment{Accept if $U$ falls below threshold}
+    \State $X \gets \tilde{X}$ \Comment{Set accepted sample}
+    \State \Return $X$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\caption{Adaptive Rejection Sampling}
+\label{algo:adaptive-rejection}
+\begin{algorithmic}
+    \Require $\log p(x)$ \Comment{Log-density of target distribution}
+    \Require $T_0 = \{x_1, x_2, \ldots, x_k\}$ \Comment{Initial tangent points}
+    \State $T \gets T_0$ \Comment{Initialize tangent point set}
+    \State $E \gets$ \Call{construct\_envelope}{$T$} \Comment{Build initial envelope}
+    \Loop
+        \State $\tilde{X} \gets$ \Call{sample\_from\_envelope}{$E$} \Comment{Sample from current envelope}
+        \State $U \gets$ \Call{runif\_01}{1} \Comment{Generate uniform random variable}
+        \State $\alpha \gets \frac{p(\tilde{X})}{E(\tilde{X})}$ \Comment{Calculate acceptance ratio}
+        \If{$U \leq \alpha$} \Comment{Accept sample}
+            \State \Return $\tilde{X}$
+        \Else \Comment{Reject and refine envelope}
+            \State $T \gets T \cup \{\tilde{X}\}$ \Comment{Add rejected point to tangent set}
+            \State $E \gets$ \Call{construct\_envelope}{$T$} \Comment{Rebuild envelope with new point}
+        \EndIf
+    \EndLoop
+\end{algorithmic}
+\end{algorithm}
+

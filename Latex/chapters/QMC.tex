@@ -1,0 +1,20 @@
+\cite{lemieux_monte_2009} provides a useful characterization of Quasi-Monte Carlo sampling methods:
+\begin{quote}
+Quasi–Monte Carlo sampling methods are typically used to provide approximations
+for multivariate integration problems defined over the unit hypercube.
+\end{quote}
+
+In Quasi-Monte Carlo (QMC) methods, random sampling is replaced by carefully constructed deterministic sequences.
+Rather than sampling randomly from the $d$-dimensional unit hypercube $[0,1]^d$, QMC methods generate \textit{low discrepancy sequences}\footnote{For a more detailed background on low discrepancy sequences, see Appendix \ref{appendix:low_discrepancy}.} for evaluating integrals of the form $\int_{[0,1]^d} f(x) \,dx$. These sequences minimize clustering and gaps, providing more systematic and uniform coverage of the integration domain.
+This approach often achieves better convergence rates than standard Monte Carlo methods, particularly for smooth integrands.
+
+
+\paragraph{Deterministic Nature and Its Implications}
+While the systematic point placement of QMC often leads to faster convergence rates, it has two key limitations. First, the Central Limit Theorem does not apply to deterministic sequences, making standard error estimation techniques unusable; concequently QMC does not provide confidence intervals. Second, QMC performance depends heavily on integrand smoothness.
+
+\paragraph{Comparison with Traditional Numerical Integration}
+When projected onto lower-dimensional subspaces, grid points of regular grids often collapse onto a much smaller set, creating poor coverage. Low discrepancy sequences are specifically designed to maintain good uniformity properties even under such projections.
+
+A visual comparison can be found in Figure \ref{fig:ex1-samples} (Section \ref{approx-pi}), which illustrates the key differences between these approaches. Random sampling exhibits clustering and gaps, regular grids show systematic coverage but suffer from poor projection properties, while low discrepancy sequences achieve both systematic coverage and retain uniformity under projections.
+
+For a comprehensive treatment of QMC, see \cite{owen_practical_2023}.

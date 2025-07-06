@@ -1,0 +1,24 @@
+The equivalence between integration and expectation forms the cornerstone of probabilistic Monte Carlo methods. This manifests in the identity $\mathbb{E}[\varphi(X)] = \int \varphi(x)f(x)dx$, which reveals that every expectation can be viewed as an integral and every integral can be recast as an expectation under an appropriate probability measure, thereby transforming the problem of numerical integration into one of statistical sampling. This insight allows deterministic integrals to be estimated by sample averages and provides the theoretical foundation for importance sampling and other variance reduction techniques. While quasi-Monte Carlo methods take a different approach through deterministic low-discrepancy sequences, both probabilistic and deterministic methods ultimately address the same fundamental challenge: efficient evaluation of high-dimensional integrals where traditional quadrature methods fail due to the curse of dimensionality.
+
+\subsection{Advantages}
+The primary strength of Monte Carlo methods lies in their dimension-independent convergence rate of $O(N^{-1/2})$, making them particularly valuable for high-dimensional problems that would be intractable through analytical or deterministic numerical approaches. This flexibility enables tackling complex integration problems across diverse domains. Monte Carlo methods naturally support variance reduction techniques such as importance sampling, which can significantly improve convergence rates. Furthermore, they provide natural uncertainty quantification through their inherent randomness, while quasi-Monte Carlo extensions can achieve even better convergence rates for smooth integrands.
+
+\subsection{Limitations}
+Monte Carlo methods face several fundamental limitations. The $O(N^{-1/2})$ convergence rate, while dimension-independent, is relatively slow compared to deterministic methods in low dimensions, and the stochastic nature introduces result variability. Many practical applications require sampling from complex or unknown distributions, necessitating advanced techniques like Markov Chain Monte Carlo or Sequential importance Sampling. Variance reduction techniques require domain expertise and can fail when poorly implemented. While quasi-Monte Carlo methods can overcome some limitations by achieving superior convergence rates, their deterministic nature prohibits confidence interval construction, eliminating natural uncertainty quantification.
+
+
+\subsection{Outlook}
+\label{outlook}
+The field of Monte Carlo methods continues to evolve rapidly. An excellent source for recent advances is the biannual \textit{Monte Carlo and Quasi–Monte Carlo Methods} conference proceedings by Springer (\cite{plaskota_monte_2012}, \cite{dick_monte_2013}, \cite{cools_monte_2016}, \cite{owen_monte_2018}, \cite{tuffin_monte_2020}, \cite{keller_monte_2022}, \cite{hinrichs_monte_2024}).
+
+\subsubsection{Sequential Importance Sampling}
+\label{sis}
+Sequential importance sampling extends static importance sampling to dynamic settings where the target distribution evolves over time or depends on sequential observations. This framework is particularly valuable in filtering problems for estimating posterior distributions of hidden states given sequential observations. For information on the method and statistical properties, \cite{murphy_probabilistic_2023, barbu_monte_2020} are excellent starting points.
+
+\subsubsection{Markov Chain Monte Carlo}
+\label{mcmc}
+Markov Chain Monte Carlo methods enable sampling from complex multivariate distributions by constructing Markov chains with desired stationary distributions. MCMC methods, including Metropolis-Hastings algorithms and Gibbs sampling, make previously intractable posterior distributions accessible. \cite{barbu_monte_2020, murphy_probabilistic_2023} provide comprehensive treatments of MCMC and its applications. Recent developments include Hamiltonian Monte Carlo and variational inference.
+
+
+
+

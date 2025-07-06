@@ -1,0 +1,35 @@
+Monte Carlo methods represent a broad class of computational algorithms that rely on repeated random sampling to obtain numerical results. These methods have become indispensable tools across numerous fields, from physics and engineering to finance and machine learning, particularly when dealing with complex, high-dimensional problems that defy analytical solutions.
+
+The power of Monte Carlo approaches lies in their ability to transform difficult mathematical problems into statistical sampling problems. Rather than attempting to solve equations directly, these methods generate random samples from probability distributions and use statistical inference to extract the desired information.
+
+This paper examines the theoretical foundations and practical applications of Monte Carlo methods, with particular emphasis on integration techniques. We begin by introducing the core concepts that form the foundation of this methodology. For improved readability, formal proofs of all theorems are provided in the appendix. Some of the examples and implementations discussed later on, can also be found in greater detail on \href{https://nikogerman.github.io/Seminar/index.html}{\color{blue}GitHub Pages}.
+
+
+\paragraph{Monte Carlo method}
+The Monte Carlo method originated in the mid-1940s during the Manhattan Project, primarily through the work of Stanislaw Ulam, who conceived the basic idea, and John von Neumann, who developed the mathematical framework. Nicholas Metropolis later contributed to its development and suggested the name. The method emerged from their need to solve complex mathematical problems in nuclear physics that involved high-dimensional integrals too complicated for analytical solutions. Their innovation was to use random sampling to approximate these mathematical calculations, creating what became known as the Monte Carlo method.
+
+\cite{lemieux_monte_2009} summarizes the method as:
+\begin{quote}
+The use of random sampling as a tool to produce
+observations on which statistical inference can be performed to extract information about a system.
+\end{quote}
+
+\paragraph{Monte Carlo integration}
+Monte Carlo integration estimates integrals of the form
+$$
+I(f) = \int_{\mathcal{D}}f(x)dx 
+$$
+by sampling points uniformly at random from the domain $\mathcal{D}$, evaluating the function $f$ at these sample points, and using the sample average to approximate the integral. This approach becomes particularly advantageous in high-dimensional settings where traditional quadrature methods suffer from the curse of dimensionality. Chapter \ref{sampling} discusses techniques for generating samples from various distributions, while Chapter \ref{variance-control} explores methods to improve the efficiency of Monte Carlo integration through variance reduction. The theoretical foundations and detailed implementation of these integration techniques are covered in Chapter \ref{MC-Integration}.
+
+\paragraph{Monte Carlo simulation}
+Monte Carlo simulation generates samples from complex random variables $Y = \varphi(X)$ by first sampling the input variables $X$ and then applying the transformation $\varphi$. This sampling-based approach allows us to study the statistical properties of $Y$ even when direct sampling or analytical solutions are intractable. The practical implementation relies on efficient sampling algorithms (Chapter \ref{sampling}) and can often benefit from variance reduction strategies (Chapter \ref{variance-control}) to improve computational efficiency. While Monte Carlo simulation shares the fundamental sampling principles with Monte Carlo integration (Chapter \ref{MC-Integration}), it focuses on generating realizations from complex distributions rather than estimating integrals. Although \cite{lemieux_monte_2009} shows that simulation problems are integration problems and vice versa, we will use the distinction for the sake of clarity.
+
+\paragraph{Quasi-Monte Carlo methods}
+Quasi-Monte Carlo methods, examined in detail in Chapter \ref{QMC}, generate deterministic point sets $\{u_1, \dots, u_n\}$ in $[0,1]^d$ that are more uniformly distributed than random samples. These low-discrepancy sequences provide better coverage of the unit hypercube, often achieving faster convergence rates than standard Monte Carlo methods for smooth integrands.
+
+\paragraph{Random Numbers}
+Random number generation forms the foundation of Monte Carlo methods. As we will demonstrate in subsequent chapters, we can generate random quantities from virtually any distribution by starting with uniform random numbers, making $U(0,1)$ the fundamental building block for all sampling methods.
+
+In practice, computational applications rely on pseudo-random number generators (see Appendix~\ref{appendix:rng} for an exemplary implementation). For the remainder of this work we assume access to a reliable algorithm $\texttt{RUNIF\_01}(n)$ that outputs $n$ independent and identically distributed random numbers following $U(0,1)$.
+
+\cite{thomopoulos_essentials_2013, lemieux_monte_2009} provide good introductions into the properties and the construction of pseudo-random number generators.

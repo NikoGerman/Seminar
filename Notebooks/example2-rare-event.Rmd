@@ -310,8 +310,8 @@ print(plot_estimates)
 print(plot_rel_errors)
 
 # Save plots
-ggsave("../plots/ex2-estimates.png", plot_estimates, device = "png", width = 8, height = 4.5)
-ggsave("../plots/ex2-rel-errors.png", plot_rel_errors, device = "png", width = 8, height = 4.5)
+ggsave("../Latex/figures/ex2-estimates.png", plot_estimates, device = "png", width = 8, height = 4.5)
+ggsave("../Latex/figures/ex2-rel-errors.png", plot_rel_errors, device = "png", width = 8, height = 4.5)
 ```
 
 ## Summary Statistics

@@ -118,5 +118,5 @@ p_02 <- ggplot() +
 The visualization clearly shows how the Cholesky transformation changes both the location (mean) and the shape/orientation (covariance structure) of the bivariate normal distribution.
 
 ```{r include=FALSE}
-ggsave("../plots/bivariate.png", p, device = "png", width = 12, height = 5)
+ggsave("../Latex/figures/bivariate.png", p, device = "png", width = 12, height = 5)
 ```

@@ -160,7 +160,7 @@ p_grid <- p_mc %+% samples_grid + ggtitle("Equidistant Grid")
 The visualization shows the key differences: uniform sampling exhibits clustering and gaps, normal sampling concentrates points near the origin, Sobol sequences achieve systematic coverage, while the grid provides deterministic regular placement.
 
 ```{r eval=FALSE, include=FALSE}
-ggsave("../plots/ex1-samples.png", p_samples, device = "png")
+ggsave("../Latex/figures/ex1-samples.png", p_samples, device = "png")
 ```
 
 # Convergence Analysis
@@ -197,7 +197,7 @@ df <- tibble(N = 2^seq(10, 26, by = 2)) %>%
 **Sobol sequences** demonstrate superior performance with consistently lower errors due to their space-filling properties. **Uniform Monte Carlo** exhibits the expected $O(N^{-1/2})$ convergence with random fluctuations. **Importance sampling** performs competitively but doesn't significantly outperform uniform sampling, suggesting the normal distribution with $\sigma = 1/3$ may not provide optimal variance reduction for this problem. The **grid approach** performs reasonably well, since the dimension $d=2$ is small enough to avoid severe curse of dimensionality effects.
 
 ```{r eval=FALSE, include=FALSE}
-ggsave("../plots/ex1-estimation-error.png", p_estimation_error, device = "png")
+ggsave("../Latex/figures/ex1-estimation-error.png", p_estimation_error, device = "png")
 ```
 
 # Integration-Sampling Duality

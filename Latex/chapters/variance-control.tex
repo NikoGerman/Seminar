@@ -1,0 +1,271 @@
+Variance reduction techniques aim to improve Monte Carlo integration by finding alternative functions whose integrals equal the original but have smaller variance. The goal is to achieve a reduction in variance while restricting the computational increase\footnote{A measure of the quality of estimators that considers both variance and computation time, is called \textit{Efficiency}. \cite{lemieux_monte_2009}}. We will focus on three methods: In section \ref{importance_sampling} we will discuss \textit{Importance Sampling}, likely the most well-known technique. We then follow up in section \ref{control_variates} with a technique called \textit{Control Variates} and will finish in section \ref{Rao-B} with \textit{Conditional Monte Carlo}. There are many more techniques\footnote{for example \textit{Antithetic Sampling} and \textit{Common Random Numbers}, for further information see \cite{murphy_probabilistic_2023, lemieux_monte_2009}.} in existence, and \cite{lemieux_monte_2009} even mentions the possibility to combine them.
+
+\subsection{Importance Sampling}
+\label{importance_sampling}
+
+Importance sampling directs sampling effort toward the most important regions of the integration domain, making it particularly useful for rare event simulation. Instead of sampling from the original density $f(x)$, we sample from an alternative density $g(x)$ and correct using likelihood ratios. We will focus on two fundamental variants: \textit{Direct Importance Sampling and Self-Normalized Importance Sampling}, as discussed in \cite{lemieux_monte_2009}. 
+
+Although other variants exist, such as \textit{Annealed importance sampling} (discussed in \cite{murphy_probabilistic_2023}), they fall outside the scope of this paper.
+
+\subsubsection{Direct Importance Sampling}
+
+The standard importance sampling estimator transforms $\mu = \int \varphi(x)f(x)dx$ into:
+\begin{equation}
+\hat{\mu}_{is} = \frac{1}{n}\sum_{i=1}^n \varphi(\tilde{x}_i)L(\tilde{x}_i)
+\end{equation}
+where $L(x) = f(x)/g(x)$ is the likelihood ratio and $\tilde{x}_i \sim g(x)$. 
+
+\begin{theoremrep}[Unbiasedness of Importance Sampling]
+The importance sampling estimator $\hat{\mu}_{is}$ is unbiased for $\mu$.
+\end{theoremrep}
+
+\begin{proof}
+We compute the expectation:
+\begin{align*}
+E(\hat{\mu}_{is}) &= E\left[\frac{1}{n}\sum_{i=1}^n \varphi(\tilde{X}_i)L(\tilde{X}_i)\right]\\
+&= E[\varphi(\tilde{X})L(\tilde{X})]\\
+&= \int \varphi(x)L(x)g(x)dx\\
+&= \int \varphi(x)\frac{f(x)}{g(x)}g(x)dx\\
+&= \int \varphi(x)f(x)dx = \mu
+\end{align*}
+\end{proof}
+
+\begin{theoremrep}[Variance of Importance Sampling]
+The variance of the importance sampling estimator is:
+\begin{equation}
+\text{Var}[\hat{\mu}_{is}] = \frac{1}{n}\left(E_f[\varphi^2(X)L(X)] - \mu^2\right)
+\end{equation}
+\end{theoremrep}
+
+\begin{proof}
+Let $\tilde{X}_1, \ldots, \tilde{X}_n$ be independent samples from $g(x)$. We assume that $g(x) > 0$ whenever $\varphi(x)f(x) \neq 0$ to ensure the likelihood ratio is well-defined.
+
+\textbf{Step 1: Variance Decomposition}
+By the independence of the samples $\tilde{X}_i$, the variance of the estimator is:
+\begin{align*}
+\text{Var}[\hat{\mu}_{is}] &= \text{Var}\left[\frac{1}{n}\sum_{i=1}^n \varphi(\tilde{X}_i)L(\tilde{X}_i)\right]\\
+&= \frac{1}{n^2}\sum_{i=1}^n \text{Var}[\varphi(\tilde{X}_i)L(\tilde{X}_i)]\\
+&= \frac{1}{n}\text{Var}[\varphi(\tilde{X})L(\tilde{X})]
+\end{align*}
+
+\textbf{Step 2: Variance Formula}
+Using the standard variance identity $\text{Var}[Y] = E[Y^2] - E[Y]^2$, we have:
+\begin{align*}
+\text{Var}[\varphi(\tilde{X})L(\tilde{X})] &= E[(\varphi(\tilde{X})L(\tilde{X}))^2] - (E[\varphi(\tilde{X})L(\tilde{X})])^2\\
+&= E[\varphi^2(\tilde{X})L^2(\tilde{X})] - \mu^2
+\end{align*}
+where we used the unbiasedness property $E[\varphi(\tilde{X})L(\tilde{X})] = \mu$.
+
+\textbf{Step 3: Rewriting as Expectation Under Original Distribution}
+We can rewrite the Expectation by factoring out one $f(x)$ term:
+\begin{align*}
+E[\varphi^2(\tilde{X})L^2(\tilde{X})] 
+&= \int_{-\infty}^{\infty} \varphi^2(x)L^2(x) \cdot g(x) \, dx \\
+&= \int_{-\infty}^{\infty} \varphi^2(x)\frac{f^2(x)}{g^2(x)} \cdot g(x) \, dx\\
+&= \int_{-\infty}^{\infty} \varphi^2(x)\frac{f(x)}{g(x)} \cdot f(x) \, dx\\
+&= \int_{-\infty}^{\infty} \varphi^2(x)L(x) \cdot f(x) \, dx\\
+&= E_f[\varphi^2(X)L(X)]
+\end{align*}
+where $E_f[\cdot]$ denotes expectation with respect to the original density $f(x)$.
+
+\textbf{Step 4: Final Result}
+Combining the steps above, we obtain:
+\begin{align*}
+\text{Var}[\hat{\mu}_{is}] &= \frac{1}{n}\text{Var}[\varphi(\tilde{X})L(\tilde{X})]\\
+&= \frac{1}{n}\left(E[\varphi^2(\tilde{X})L^2(\tilde{X})] - \mu^2\right)\\
+&= \frac{1}{n}\left(E_f[\varphi^2(X)L(X)] - \mu^2\right)
+\end{align*}
+\end{proof}
+
+This shows that the variance of the importance sampling estimator depends on $E_f[\varphi^2(X)L(X)]$ under the original distribution $f(x)$. Variance reduction occurs when $E_f[\varphi^2(X)L(X)] \leq E_f[\varphi^2(X)]$. Under certain conditions, there exists an optimal choice for $g(x)$ (see \cite{lemieux_monte_2009}).
+
+\begin{theoremrep}[Optimal Importance Distribution]
+Suppose $\mu = \int \varphi(x)f(x)dx \neq 0$ is known. Then the optimal importance distribution that minimizes the variance is:
+\begin{equation}
+    g^*(x) = \frac{\varphi(x)f(x)}{\mu}
+\end{equation}
+and this choice yields zero variance for the importance sampling estimator.
+\end{theoremrep}
+
+\begin{proof}
+First, we verify that $g^*(x)$ is a valid probability density function. We have:
+$$\int_{-\infty}^{\infty} g^*(x) dx = \int_{-\infty}^{\infty} \frac{\varphi(x)f(x)}{\mu} dx = \frac{1}{\mu} \int_{-\infty}^{\infty} \varphi(x)f(x) dx = \frac{\mu}{\mu} = 1$$
+
+The likelihood ratio is:
+$$L^*(x) = \frac{f(x)}{g^*(x)} = \frac{f(x)}{\frac{\varphi(x)f(x)}{\mu}} = \frac{\mu}{\varphi(x)}$$
+where we assume $\varphi(x) \neq 0$ on the relevant support.
+
+Now we calculate $E_f[\varphi^2(X)L^*(X)]$:
+\begin{align*}
+    E_f[\varphi^2(X)L^*(X)] 
+    &= E_f \left[ \varphi^2(X) \cdot \frac{\mu}{\varphi(X)} \right] \\
+    &= \mu \cdot E_f[\varphi(X)] \\
+    &= \mu \cdot \mu = \mu^2
+\end{align*}
+
+Applying the variance formula for importance sampling:
+\begin{align*}
+    \text{Var}[\hat{\mu}_{is}] 
+    &= \frac{1}{n}\left(E_f[\varphi^2(X)L^*(X)] - \mu^2\right) \\
+    &= \frac{1}{n} \left(\mu^2 - \mu^2\right) \\
+    &= 0
+\end{align*}
+
+Thus, the optimal importance distribution $g^*(x)$ achieves zero variance.
+\end{proof}
+
+While this result is primarily theoretical—since knowing $\mu$ exactly would make estimation unnecessary—it provides valuable guidance for choosing effective importance distributions in practice. The optimal form $g^*(x) \propto \varphi(x)f(x)$ suggests that the importance distribution should concentrate sampling effort in regions where the integrand $\varphi(x)f(x)$ is large. In practical applications, one can approximate this optimal distribution by choosing $g(x)$ to be roughly proportional to $\varphi(x)f(x)$ or to mimic its shape, thereby achieving substantial variance reduction even when the exact optimal distribution is unknown.
+
+
+
+\subsubsection{Self-normalized Importance Sampling}
+
+The self-normalized or \textit{weighted} importance sampling estimator has the following form:
+\begin{equation}
+\hat{\mu}_{is,w} = \sum_{i=1}^n w_i\varphi(\tilde{x}_i) 
+\end{equation}
+
+and uses normalized likelihood ratios as weights:
+
+\begin{equation*}
+w_i = \frac{L(\tilde{x}_i)}{\sum_{i=1}^n L(\tilde{x}_i)}
+\end{equation*}
+
+It is easy to see, that the weights are bounded: $w_i \in [0, 1] \quad \forall \quad i=1,...,n$. Additionally, the weights add up to 1. This approach can handle complicated densities with unknown normalizing constants, and is biased, yet consistent\footnote{An estimator $\hat{\mu}$ is called \textit{consistent} if $Bias(\hat{\mu}) \to 0$ for $n \to \infty$} (see \cite{lemieux_monte_2009, murphy_probabilistic_2023}). The normalization cancels unknown constants in both $f$ and $g$.
+
+\subsection{Control Variates}
+\label{control_variates}
+
+Control variates reduce variance by exploiting correlation with auxiliary variables whose expectations are known. The control variate method introduces a baseline function $\beta(X)$ with known expectation $E[\beta(X)] = \mu_\beta$. The control variate estimator is:
+\begin{equation}
+\hat{\mu}_{cv} = \frac{1}{n}\sum_{i=1}^n [\varphi(X_i) + c(\mu_\beta - \beta(X_i))]
+\end{equation}
+where $c$ is a coefficient to be determined optimally.
+
+\begin{theoremrep}[Unbiasedness of Control Variates]
+The control variate estimator $\hat{\mu}_{cv}$ is unbiased for any choice of coefficient $c$.
+\end{theoremrep}
+
+\begin{proof}
+\begin{align*}
+E[\hat{\mu}_{cv}] &= E\left[\frac{1}{n}\sum_{i=1}^n [\varphi(X_i) + c(\mu_\beta - \beta(X_i))]\right]\\
+&= E[\varphi(X)] + c(E[\mu_\beta] - E[\beta(X)])\\
+&= E[\varphi(X)] + c(\mu_\beta - \mu_\beta) = \mu
+\end{align*}
+\end{proof}
+
+\begin{theoremrep}[Variance of Control Variate Estimator]
+The variance of the control variate estimator is:
+\begin{equation}
+\text{Var}(\hat{\mu}_{cv}) = \frac{1}{n}[\text{Var}(\varphi(X)) + c^2\text{Var}(\beta(X)) - 2c\text{Cov}(\varphi(X), \beta(X))]
+\end{equation}
+\end{theoremrep}
+
+\begin{proof}
+\begin{align*}
+\text{Var}(\hat{\mu}_{cv}) &= \text{Var}\left(\frac{1}{n}\sum_{i=1}^n [\varphi(X_i) + c(\mu_\beta - \beta(X_i))]\right)\\
+&= \frac{1}{n}\text{Var}(\varphi(X) + c(\mu_\beta - \beta(X)))\\
+&= \frac{1}{n}\text{Var}(\varphi(X) - c\beta(X))\\
+&= \frac{1}{n}[\text{Var}(\varphi(X)) + c^2\text{Var}(\beta(X)) - 2c\text{Cov}(\varphi(X), \beta(X))]
+\end{align*}
+\end{proof}
+
+\begin{theoremrep}[Optimal Control Variate Coefficient]
+The optimal coefficient that minimizes the variance of $\hat{\mu}_{cv}$ is:
+\begin{equation}
+c^* = \frac{\text{Cov}(\varphi(X), \beta(X))}{\text{Var}(\beta(X))}
+\end{equation}
+and the resulting optimal variance is:
+\begin{equation}
+\text{Var}(\hat{\mu}_{cv}) = (1 - \rho_{\varphi,\beta}^2)\text{Var}(\hat{\mu}) \leq \text{Var}(\hat{\mu})
+\end{equation}
+where $\rho_{\varphi,\beta}^2$ is the squared correlation between $\varphi(X)$ and $\beta(X)$.
+\end{theoremrep}
+
+\begin{proof}
+To minimize the variance, we take the derivative with respect to $c$ and set it to zero:
+\begin{align*}
+\frac{\partial}{\partial c}\text{Var}(\hat{\mu}_{cv}) &= \frac{1}{n}[2c\text{Var}(\beta(X)) - 2\text{Cov}(\varphi(X), \beta(X))] = 0
+\end{align*}
+
+Solving for $c$ yields:
+$$c^* = \frac{\text{Cov}(\varphi(X), \beta(X))}{\text{Var}(\beta(X))}$$
+
+Substituting $c^*$ into the variance expression:
+\begin{align*}
+\text{Var}(\hat{\mu}_{cv}) &= \frac{1}{n}\left[\text{Var}(\varphi(X)) - \frac{[\text{Cov}(\varphi(X), \beta(X))]^2}{\text{Var}(\beta(X))}\right]\\
+&= \frac{1}{n}\text{Var}(\varphi(X))\left[1 - \frac{[\text{Cov}(\varphi(X), \beta(X))]^2}{\text{Var}(\varphi(X))\text{Var}(\beta(X))}\right]\\
+&= (1 - \rho_{\varphi,\beta}^2)\text{Var}(\hat{\mu})
+\end{align*}
+\end{proof}
+
+High correlation between $\varphi(X)$ and $\beta(X)$ maximizes variance reduction, as seen in the $(1 - \rho_{\varphi,\beta}^2)$ factor. For further information, see \cite{murphy_probabilistic_2023, lemieux_monte_2009}.
+
+\subsection{Conditional Monte Carlo}
+\label{Rao-B}
+
+Conditional Monte Carlo reduces variance by analytically marginalizing out some variables instead of sampling them. Consider estimating $\mu = E[\varphi(X,Y)]$ where the conditional expectation $E[\varphi(X,Y)|X]$ can be computed tractably.
+
+The standard Monte Carlo estimator uses samples $(X_s, Y_s) \sim f(X,Y)$:
+\begin{equation}
+\hat{\mu}_{MC} = \frac{1}{n}\sum_{s=1}^n \varphi(X_s, Y_s)
+\end{equation}
+
+The conditional Monte Carlo estimator samples only $X_s \sim f(X)$ and computes:
+\begin{equation}
+\hat{\mu}_{CMC} = \frac{1}{n}\sum_{s=1}^n E[\varphi(X,Y)|X_s]
+\end{equation}
+
+\begin{theoremrep}[Unbiasedness of Conditional Monte Carlo]
+The conditional Monte Carlo estimator $\hat{\mu}_{CMC}$ is unbiased for $\mu$.
+\end{theoremrep}
+
+\begin{proof}
+\begin{align*}
+E[\hat{\mu}_{CMC}] &= E\left[\frac{1}{n}\sum_{s=1}^n E[\varphi(X,Y)|X_s]\right]\\
+&= E[E[\varphi(X,Y)|X]]\\
+&= E[\varphi(X,Y)] \quad \text{(by the law of total expectation)}\\
+&= \mu
+\end{align*}
+\end{proof}
+
+\begin{theoremrep}[Variance Reduction of Conditional Monte Carlo]
+The conditional Monte Carlo estimator has variance:
+\begin{equation}
+\text{Var}(\hat{\mu}_{CMC}) = \frac{1}{n}\text{Var}(E[\varphi(X,Y)|X]) \leq \frac{1}{n}\text{Var}(\varphi(X,Y)) = \text{Var}(\hat{\mu}_{MC})
+\end{equation}
+with equality if and only if $\varphi(X,Y)$ is completely determined by $X$.
+\end{theoremrep}
+
+\begin{proof}
+The variance of the conditional Monte Carlo estimator is:
+\begin{align*}
+\text{Var}(\hat{\mu}_{CMC}) &= \text{Var}\left(\frac{1}{n}\sum_{s=1}^n E[\varphi(X,Y)|X_s]\right)\\
+&= \frac{1}{n}\text{Var}(E[\varphi(X,Y)|X])
+\end{align*}
+
+By the law of total variance:
+\begin{align*}
+\text{Var}(\varphi(X,Y)) &= \text{Var}(E[\varphi(X,Y)|X]) + E[\text{Var}(\varphi(X,Y)|X)]
+\end{align*}
+
+Rearranging gives us:
+\begin{align*}
+\text{Var}(E[\varphi(X,Y)|X]) &= \underbrace{\text{Var}(\varphi(X,Y))}_{\text{Variance of Naive Monte Carlo estimator}} - 
+\underbrace{E[\text{Var}(\varphi(X,Y)|X)]}_{\geq 0} 
+\end{align*}
+
+Therefore:
+\begin{align*}
+\text{Var}(E[\varphi(X,Y)|X]) &\leq \text{Var}(\varphi(X,Y))
+\end{align*}
+
+This gives us:
+\begin{align*}
+\text{Var}(\hat{\mu}_{CMC}) &= \frac{1}{n}\text{Var}(E[\varphi(X,Y)|X]) \leq \frac{1}{n}\text{Var}(\varphi(X,Y)) = \text{Var}(\hat{\mu}_{MC})
+\end{align*}
+
+Equality holds if and only if $E[\text{Var}(\varphi(X,Y)|X)] = 0$, which occurs when $\text{Var}(\varphi(X,Y)|X) = 0$. This happens when $\varphi(X,Y)$ is a deterministic function of $X$ alone.
+\end{proof}
+
+The intuition is that we eliminate randomness from $Y$ through analytical integration, sampling only in the reduced dimensional space of $X$. The variance reduction equals $E[\text{Var}(\varphi(X,Y)|X)]$. For further information, see \cite{murphy_probabilistic_2023, lemieux_monte_2009}.
