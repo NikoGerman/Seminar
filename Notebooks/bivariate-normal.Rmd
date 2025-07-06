@@ -20,14 +20,15 @@ We demonstrate how to transform a bivariate standard normal random variable $Z \
 ## Mathematical Foundation
 
 The transformation is based on:
-$$X = \boldsymbol{\mu} + ZR$$
-where $R$ is the Cholesky factor of the covariance matrix $\Sigma = R^T R$.
+$$X = \boldsymbol{\mu} + R^{\top}Z$$
+where $R$ is the Cholesky factor of the covariance matrix $\Sigma = R^{\top} R$.
 
 # Generating Standard Bivariate Normal Samples
 
 First we construct $Z$ by sampling two independent standard normal variables:
 
 ```{r}
+set.seed(42)
 Z <- cbind(Z_1 = rnorm(100),
             Z_2 = rnorm(100))
 ```
@@ -64,11 +65,11 @@ We compute the Cholesky factor. Note that R's `chol()` function returns an upper
 (R <- chol(Sigma))
 ```
 
-This gives us $\Sigma = R^T R$ where $R$ is upper triangular.
+This gives us $\Sigma = R^{\top} R$ where $R$ is upper triangular.
 
 # Transformation
 
-We apply the transformation $X = \boldsymbol{\mu} + ZR$:
+We apply the transformation $X = \boldsymbol{\mu} + R^{\top} Z$:
 
 ```{r}
 X <- t(mu + t(Z %*% R))
