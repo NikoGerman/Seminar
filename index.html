@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monte Carlo Methods and Random Sampling - Examples</title>
+    <title>Monte Carlo Methods and Random Sampling - Interactive Examples</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -30,14 +30,44 @@
         .subtitle {
             text-align: center;
             color: #7f8c8d;
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
             font-style: italic;
         }
         .author {
             text-align: center;
             color: #34495e;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
             font-size: 1.1rem;
+        }
+        .paper-section {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 1.5rem;
+            margin-bottom: 3rem;
+            border-radius: 0 8px 8px 0;
+        }
+        .paper-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+        .paper-summary {
+            margin-bottom: 1.5rem;
+            color: #555;
+        }
+        .paper-link {
+            display: inline-block;
+            background: #e74c3c;
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: background-color 0.2s ease;
+        }
+        .paper-link:hover {
+            background: #c0392b;
         }
         .section {
             margin-bottom: 3rem;
@@ -48,6 +78,11 @@
             margin-bottom: 1rem;
             border-bottom: 2px solid #3498db;
             padding-bottom: 0.5rem;
+        }
+        .section-description {
+            color: #666;
+            margin-bottom: 1.5rem;
+            font-style: italic;
         }
         .examples-grid {
             display: grid;
@@ -78,11 +113,10 @@
             color: #2c3e50;
             margin-bottom: 0.5rem;
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
         }
         .expand-icon {
-            margin-left: auto;
             transition: transform 0.3s ease;
             color: #3498db;
             font-size: 1.2rem;
@@ -102,7 +136,7 @@
             border-top: 1px solid #e0e0e0;
         }
         .example-content.expanded {
-            max-height: 800px;
+            max-height: 600px;
         }
         .content-inner {
             padding: 2rem;
@@ -128,22 +162,21 @@
             background: white;
             border: 1px solid #ddd;
             border-radius: 4px;
-            padding: 1rem;
-            height: 400px;
-            overflow-y: auto;
+            padding: 1.5rem;
         }
-        .iframe-container {
-            position: relative;
-            width: 100%;
-            height: 500px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            overflow: hidden;
+        .content-preview h4 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 1rem;
         }
-        .iframe-container iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
+        .content-preview ul {
+            margin-bottom: 1rem;
+        }
+        .content-preview li {
+            margin-bottom: 0.5rem;
+        }
+        .content-preview strong {
+            color: #2c3e50;
         }
         .footer {
             text-align: center;
@@ -152,21 +185,27 @@
             border-top: 1px solid #ecf0f1;
             padding-top: 2rem;
         }
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: #7f8c8d;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Monte Carlo Methods and Random Sampling</h1>
-        <div class="subtitle">Examples and Implementations</div>
+        <div class="subtitle">Seminar Paper with Hands-on Examples</div>
         <div class="author">by Nikolai German</div>
+        
+        <div class="paper-section">
+            <div class="paper-title">📄 Seminar Paper</div>
+            <div class="paper-summary">
+                Monte Carlo methods provide essential computational tools for solving high-dimensional integration and sampling problems that are analytically intractable. This paper presents a comprehensive treatment of Monte Carlo techniques, beginning with fundamental integration principles and the curse of dimensionality that motivates probabilistic approaches. Key sampling algorithms are systematically developed, including the inversion method, Box-Muller transformation, and acceptance-rejection techniques. The paper presents variance reduction strategies, most importantly importance sampling, and complements pseudo-random approaches with quasi-Monte Carlo methods for improved convergence rates. Practical effectiveness is demonstrated through classical applications including π approximation and rare event estimation in financial risk models, where importance sampling achieves dramatic efficiency gains over standard approaches.
+            </div>
+            <a href="https://nikogerman.github.io/Seminar/Paper.pdf" class="paper-link" target="_blank">📖 Read Full Paper (PDF)</a>
+        </div>
         
         <div class="section">
             <h2 class="section-title">Monte Carlo Integration</h2>
+            <div class="section-description">
+                Explore numerical integration techniques and their convergence properties, demonstrating how Monte Carlo methods overcome the curse of dimensionality.
+            </div>
             <div class="examples-grid">
                 <div class="example-card" data-example="mc-integration">
                     <div class="example-header">
@@ -175,17 +214,25 @@
                             <span class="expand-icon">▼</span>
                         </div>
                         <div class="example-description">
-                            Basic Monte Carlo integration example computing an integral, illustrating convergence behavior and the integration-sampling duality.
+                            Basic Monte Carlo integration example demonstrating convergence behavior and the fundamental integration-sampling duality.
                         </div>
                     </div>
                     <div class="example-content">
                         <div class="content-inner">
                             <div class="example-links">
-                                <a href="https://nikogerman.github.io/Seminar/Notebooks/mc-integration.html" class="example-link" target="_blank">Open Full Example</a>
-                                <a href="https://github.com/NikoGerman/Seminar/blob/main/Notebooks/mc-integration.Rmd" class="example-link" target="_blank">View Source</a>
+                                <a href="https://nikogerman.github.io/Seminar/Notebooks/mc-integration.html" class="example-link" target="_blank">View Example</a>
+                                <a href="https://github.com/NikoGerman/Seminar/blob/main/Notebooks/mc-integration.Rmd" class="example-link" target="_blank">Source Code</a>
                             </div>
-                            <div class="iframe-container">
-                                <iframe src="" data-src="https://nikogerman.github.io/Seminar/Notebooks/mc-integration.html" title="Monte Carlo Integration Example"></iframe>
+                            <div class="content-preview">
+                                <h4>What you'll find in this example:</h4>
+                                <ul>
+                                    <li><strong>Mathematical Foundation:</strong> Transform integration domains using substitution</li>
+                                    <li><strong>Implementation:</strong> Monte Carlo estimator for sine function integration</li>
+                                    <li><strong>Visualization:</strong> Plots showing convergence behavior with increasing sample sizes</li>
+                                    <li><strong>Analysis:</strong> Comparison of empirical versus theoretical error rates</li>
+                                    <li><strong>Key Insight:</strong> Demonstrates integration-sampling duality fundamental to all MC methods</li>
+                                </ul>
+                                <p><em>This example serves as the foundation for understanding Monte Carlo integration concepts used throughout the paper.</em></p>
                             </div>
                         </div>
                     </div>
@@ -198,17 +245,25 @@
                             <span class="expand-icon">▼</span>
                         </div>
                         <div class="example-description">
-                            A comprehensive comparison of Monte Carlo methods for estimating π, including uniform sampling, importance sampling, quasi-Monte Carlo, and grid-based approaches.
+                            Comprehensive comparison of different Monte Carlo approaches using the classic circle area estimation problem.
                         </div>
                     </div>
                     <div class="example-content">
                         <div class="content-inner">
                             <div class="example-links">
-                                <a href="https://nikogerman.github.io/Seminar/Notebooks/example1-estimating-pi.html" class="example-link" target="_blank">Open Full Example</a>
-                                <a href="https://github.com/NikoGerman/Seminar/blob/main/Notebooks/example1-estimating-pi.Rmd" class="example-link" target="_blank">View Source</a>
+                                <a href="https://nikogerman.github.io/Seminar/Notebooks/example1-estimating-pi.html" class="example-link" target="_blank">View Example</a>
+                                <a href="https://github.com/NikoGerman/Seminar/blob/main/Notebooks/example1-estimating-pi.Rmd" class="example-link" target="_blank">Source Code</a>
                             </div>
-                            <div class="iframe-container">
-                                <iframe src="" data-src="https://nikogerman.github.io/Seminar/Notebooks/example1-estimating-pi.html" title="Estimating Pi Example"></iframe>
+                            <div class="content-preview">
+                                <h4>What you'll find in this example:</h4>
+                                <ul>
+                                    <li><strong>Four Methods Compared:</strong> Uniform Monte Carlo, Importance Sampling, Quasi-Monte Carlo with Sobol sequences, and Grid-based approaches</li>
+                                    <li><strong>Visual Comparison:</strong> See how different sampling strategies distribute points in space</li>
+                                    <li><strong>Convergence Analysis:</strong> Error rates across sample sizes from small to very large</li>
+                                    <li><strong>Key Finding:</strong> Sobol sequences outperform due to superior space-filling properties</li>
+                                    <li><strong>Practical Insights:</strong> Learn when each method works best and why</li>
+                                </ul>
+                                <p><em>A comprehensive comparison showcasing different Monte Carlo approaches on the classic problem of estimating π.</em></p>
                             </div>
                         </div>
                     </div>
@@ -221,17 +276,25 @@
                             <span class="expand-icon">▼</span>
                         </div>
                         <div class="example-description">
-                            Portfolio risk analysis demonstrating the power of importance sampling for estimating tail probabilities and rare event simulation.
+                            Portfolio risk analysis demonstrating the power of importance sampling for estimating extremely unlikely events.
                         </div>
                     </div>
                     <div class="example-content">
                         <div class="content-inner">
                             <div class="example-links">
-                                <a href="https://nikogerman.github.io/Seminar/Notebooks/example2-rare-event.html" class="example-link" target="_blank">Open Full Example</a>
-                                <a href="https://github.com/NikoGerman/Seminar/blob/main/Notebooks/example2-rare-event.Rmd" class="example-link" target="_blank">View Source</a>
+                                <a href="https://nikogerman.github.io/Seminar/Notebooks/example2-rare-event.html" class="example-link" target="_blank">View Example</a>
+                                <a href="https://github.com/NikoGerman/Seminar/blob/main/Notebooks/example2-rare-event.Rmd" class="example-link" target="_blank">Source Code</a>
                             </div>
-                            <div class="iframe-container">
-                                <iframe src="" data-src="https://nikogerman.github.io/Seminar/Notebooks/example2-rare-event.html" title="Rare Event Estimation Example"></iframe>
+                            <div class="content-preview">
+                                <h4>What you'll find in this example:</h4>
+                                <ul>
+                                    <li><strong>Portfolio Risk Model:</strong> Five-stock portfolio with realistic log-normal returns</li>
+                                    <li><strong>Rare Event:</strong> Estimate probability of achieving 300% profit from equally weighted portfolio</li>
+                                    <li><strong>Standard vs Importance Sampling:</strong> Dramatic efficiency improvements demonstrated</li>
+                                    <li><strong>Sample Requirements:</strong> Billions of samples with standard methods versus manageable numbers with importance sampling</li>
+                                    <li><strong>Practical Impact:</strong> Essential techniques for risk management and tail probability estimation</li>
+                                </ul>
+                                <p><em>Demonstrates why importance sampling is crucial for estimating extremely rare events in finance and risk analysis.</em></p>
                             </div>
                         </div>
                     </div>
@@ -241,6 +304,9 @@
         
         <div class="section">
             <h2 class="section-title">Random Sampling Methods</h2>
+            <div class="section-description">
+                Learn fundamental techniques for generating random samples from various probability distributions, forming the building blocks of all Monte Carlo methods.
+            </div>
             <div class="examples-grid">
                 <div class="example-card" data-example="inversion">
                     <div class="example-header">
@@ -249,17 +315,25 @@
                             <span class="expand-icon">▼</span>
                         </div>
                         <div class="example-description">
-                            Inverse transform sampling technique for generating random samples from any distribution using its cumulative distribution function.
+                            The fundamental sampling technique using inverse cumulative distribution functions to generate random variables.
                         </div>
                     </div>
                     <div class="example-content">
                         <div class="content-inner">
                             <div class="example-links">
-                                <a href="https://nikogerman.github.io/Seminar/Notebooks/inversion-method.html" class="example-link" target="_blank">Open Full Example</a>
-                                <a href="https://github.com/NikoGerman/Seminar/blob/main/Notebooks/inversion-method.Rmd" class="example-link" target="_blank">View Source</a>
+                                <a href="https://nikogerman.github.io/Seminar/Notebooks/inversion-method.html" class="example-link" target="_blank">View Example</a>
+                                <a href="https://github.com/NikoGerman/Seminar/blob/main/Notebooks/inversion-method.Rmd" class="example-link" target="_blank">Source Code</a>
                             </div>
-                            <div class="iframe-container">
-                                <iframe src="" data-src="https://nikogerman.github.io/Seminar/Notebooks/inversion-method.html" title="Inversion Method Example"></iframe>
+                            <div class="content-preview">
+                                <h4>What you'll find in this example:</h4>
+                                <ul>
+                                    <li><strong>Fundamental Principle:</strong> Transform uniform random variables using inverse cumulative distribution functions</li>
+                                    <li><strong>Visual Demonstration:</strong> Step-by-step transformation from uniform to exponential distribution</li>
+                                    <li><strong>General Implementation:</strong> Flexible function that works with any inverse CDF</li>
+                                    <li><strong>Multiple Distributions:</strong> Examples with exponential and normal distributions</li>
+                                    <li><strong>Practical Versatility:</strong> Works with both analytical and numerical inverse CDFs</li>
+                                </ul>
+                                <p><em>The most fundamental sampling technique - essential foundation for understanding all other sampling approaches.</em></p>
                             </div>
                         </div>
                     </div>
@@ -272,17 +346,25 @@
                             <span class="expand-icon">▼</span>
                         </div>
                         <div class="example-description">
-                            Classic transformation method for generating standard normal random variables from uniform random variables using polar coordinates.
+                            Classic transformation method for generating standard normal random variables using polar coordinates.
                         </div>
                     </div>
                     <div class="example-content">
                         <div class="content-inner">
                             <div class="example-links">
-                                <a href="https://nikogerman.github.io/Seminar/Notebooks/box-muller.html" class="example-link" target="_blank">Open Full Example</a>
-                                <a href="https://github.com/NikoGerman/Seminar/blob/main/Notebooks/box-muller.Rmd" class="example-link" target="_blank">View Source</a>
+                                <a href="https://nikogerman.github.io/Seminar/Notebooks/box-muller.html" class="example-link" target="_blank">View Example</a>
+                                <a href="https://github.com/NikoGerman/Seminar/blob/main/Notebooks/box-muller.Rmd" class="example-link" target="_blank">Source Code</a>
                             </div>
-                            <div class="iframe-container">
-                                <iframe src="" data-src="https://nikogerman.github.io/Seminar/Notebooks/box-muller.html" title="Box-Muller Method Example"></iframe>
+                            <div class="content-preview">
+                                <h4>What you'll find in this example:</h4>
+                                <ul>
+                                    <li><strong>Polar Transformation:</strong> Convert two uniform variables into two independent normal variables</li>
+                                    <li><strong>Mathematical Elegance:</strong> Beautiful application of polar coordinate transformation</li>
+                                    <li><strong>Implementation:</strong> Simple function producing pairs of standard normal variables</li>
+                                    <li><strong>Verification:</strong> Statistical tests confirming correct mean and variance properties</li>
+                                    <li><strong>Visualization:</strong> Compare empirical distribution with theoretical normal curve</li>
+                                </ul>
+                                <p><em>A classic and efficient method for generating normal random variables, essential in many statistical applications.</em></p>
                             </div>
                         </div>
                     </div>
@@ -295,17 +377,25 @@
                             <span class="expand-icon">▼</span>
                         </div>
                         <div class="example-description">
-                            Demonstration of generating correlated bivariate normal samples using Cholesky decomposition to transform independent standard normal variables.
+                            Generate correlated bivariate normal samples using Cholesky decomposition for arbitrary covariance structures.
                         </div>
                     </div>
                     <div class="example-content">
                         <div class="content-inner">
                             <div class="example-links">
-                                <a href="https://nikogerman.github.io/Seminar/Notebooks/bivariate-normal.html" class="example-link" target="_blank">Open Full Example</a>
-                                <a href="https://github.com/NikoGerman/Seminar/blob/main/Notebooks/bivariate-normal.Rmd" class="example-link" target="_blank">View Source</a>
+                                <a href="https://nikogerman.github.io/Seminar/Notebooks/bivariate-normal.html" class="example-link" target="_blank">View Example</a>
+                                <a href="https://github.com/NikoGerman/Seminar/blob/main/Notebooks/bivariate-normal.Rmd" class="example-link" target="_blank">Source Code</a>
                             </div>
-                            <div class="iframe-container">
-                                <iframe src="" data-src="https://nikogerman.github.io/Seminar/Notebooks/bivariate-normal.html" title="Bivariate Normal Sampling Example"></iframe>
+                            <div class="content-preview">
+                                <h4>What you'll find in this example:</h4>
+                                <ul>
+                                    <li><strong>Cholesky Decomposition:</strong> Transform covariance matrices for multivariate sampling</li>
+                                    <li><strong>Linear Transformation:</strong> Convert independent standard normal variables to correlated ones</li>
+                                    <li><strong>Step-by-Step Process:</strong> Generate, verify, transform, and verify again</li>
+                                    <li><strong>Visualization:</strong> Before and after density contours showing transformation effects</li>
+                                    <li><strong>Practical Application:</strong> Foundation for multivariate Monte Carlo methods</li>
+                                </ul>
+                                <p><em>Essential technique for sampling from multivariate normal distributions with arbitrary mean vectors and covariance matrices.</em></p>
                             </div>
                         </div>
                     </div>
@@ -314,7 +404,7 @@
         </div>
         
         <div class="footer">
-            <p>These examples complement the seminar paper on Monte Carlo methods and random sampling, providing implementations and detailed analyses of both integration techniques and fundamental sampling methods.</p>
+            <p>These interactive examples complement the seminar paper on Monte Carlo methods and random sampling, providing hands-on implementations and detailed analyses of the theoretical concepts discussed in the paper.</p>
         </div>
     </div>
 
@@ -325,7 +415,6 @@
             cards.forEach(card => {
                 const header = card.querySelector('.example-header');
                 const content = card.querySelector('.example-content');
-                const iframe = card.querySelector('iframe');
                 
                 header.addEventListener('click', function() {
                     const isExpanded = card.classList.contains('expanded');
@@ -342,11 +431,6 @@
                         // Expand this card
                         card.classList.add('expanded');
                         content.classList.add('expanded');
-                        
-                        // Load iframe content only when expanding
-                        if (iframe && !iframe.src) {
-                            iframe.src = iframe.dataset.src;
-                        }
                         
                         // Smooth scroll to the card
                         setTimeout(() => {
