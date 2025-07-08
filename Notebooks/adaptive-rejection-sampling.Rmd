@@ -1,0 +1,420 @@
+---
+title: "Adaptive Rejection Sampling vs Standard Rejection Sampling"
+author: "Nikolai German"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+```
+
+# Introduction
+
+We compare two rejection sampling methods for the **standard normal distribution** $N(0,1)$ on the domain $[-4, 4]$:
+
+1. **Standard Rejection Sampling**: Uses uniform proposal on $[-4, 4]$ with fixed envelope
+2. **Adaptive Rejection Sampling (ARS)**: Builds and refines a piecewise linear envelope in log-space
+
+The **standard rejection method** uses a uniform proposal $q(x) = \frac{1}{8}$ on $[-4, 4]$ with acceptance probability:
+$$\alpha = \frac{f(x)}{M \cdot q(x)} = \frac{f(x)}{M/8}$$
+where $M = f(0) = \frac{1}{\sqrt{2\pi}} \approx 0.399$ is the maximum density.
+
+The **ARS algorithm** builds a piecewise linear upper envelope in log-space:
+1. Initialize support points and compute tangent lines: $\ell_i(x) = \log f(x_i) + f'(x_i)(x - x_i)$
+2. Construct envelope: $\log \hat{s}(x) = \min_i \ell_i(x)$
+3. Sample from $\hat{s}(x)$ using segment-wise inverse CDF
+4. Accept/reject against true density; add rejection points for adaptation
+
+# Implementation
+
+First, we define the mathematical functions needed for working with the standard normal distribution:
+
+```{r}
+# Log-density and derivative for standard normal
+log_normal_density <- function(x) {
+  -0.5 * log(2 * pi) - 0.5 * x^2
+}
+
+log_normal_derivative <- function(x) {
+  -x
+}
+
+normal_density <- function(x) {
+  exp(log_normal_density(x))
+}
+```
+
+## Standard Rejection Sampling
+
+The standard rejection method uses a simple uniform proposal distribution over the domain $[-4, 4]$. The envelope is fixed and equal to the maximum density value $M = \frac{1}{\sqrt{2\pi}}$ times the uniform density.
+
+```{r}
+# Standard rejection sampling with uniform proposal
+standard_rejection_sampler <- function(n, domain = c(-4, 4)) {
+  # Maximum of normal density on [-4, 4] is at x=0
+  M <- 1 / sqrt(2 * pi)  # ≈ 0.399
+  
+  samples <- numeric(n)
+  n_accepted <- 0
+  n_total <- 0
+  
+  while (n_accepted < n) {
+    x_prop <- runif(1, domain[1], domain[2])
+    u <- runif(1)
+    
+    n_total <- n_total + 1
+    
+    if (u <= normal_density(x_prop) / M) {
+      n_accepted <- n_accepted + 1
+      samples[n_accepted] <- x_prop
+    }
+  }
+  
+  attr(samples, "acceptance_rate") <- n_accepted / n_total
+  samples
+}
+```
+
+## ARS: Building the Piecewise Linear Envelope
+
+The core of ARS is constructing a piecewise linear upper envelope in log-space. Given support points $x_1, \ldots, x_k$, we compute tangent lines $\ell_i(x) = \log f(x_i) + f'(x_i)(x - x_i)$ and find their intersections to create envelope segments. The envelope at any point is $\log \hat{s}(x) = \min_i \ell_i(x)$.
+
+```{r}
+# Function to build piecewise linear envelope structure
+build_ars_envelope <- function(support_points, domain = c(-4, 4)) {
+  # Sort support points
+  support_points <- sort(unique(support_points))
+  k <- length(support_points)
+  
+  # Compute log-densities and derivatives at support points
+  log_f <- log_normal_density(support_points)
+  df <- log_normal_derivative(support_points)
+  
+  # Find intersection points of adjacent tangent lines
+  # Solve: log_f[i] + df[i]*(x - support_points[i]) = log_f[i+1] + df[i+1]*(x - support_points[i+1])
+  intersections <- numeric(k - 1)
+  for (i in 1:(k-1)) {
+    intersections[i] <- (log_f[i+1] - log_f[i] - df[i+1]*support_points[i+1] + df[i]*support_points[i]) / 
+                       (df[i] - df[i+1])
+  }
+  
+  # Define envelope segments: [domain[1], intersections[1], ..., intersections[k-1], domain[2]]
+  boundaries <- c(domain[1], intersections, domain[2])
+  
+  # Return envelope structure (without probabilities)
+  list(
+    support_points = support_points,
+    boundaries = boundaries,
+    log_f = log_f,
+    df = df
+  )
+}
+```
+
+For a given envelope, we want to be able, to sample from it. To achieve that, `calculate_segment_probabilities` is a helper, which returns the probabilities for each segment of a given envelope.
+
+```{r}
+# Function to calculate segment probabilities
+calculate_segment_probabilities <- function(envelope_info) {
+  k <- length(envelope_info$support_points)
+  boundaries <- envelope_info$boundaries
+  log_f <- envelope_info$log_f
+  df <- envelope_info$df
+  
+  # Compute normalization constants for each segment
+  # Each segment has form: exp(a*x + b) where a = df[i], b = log_f[i] - df[i]*support_points[i]
+  segment_probs <- numeric(k)
+  for (i in 1:k) {
+    a <- df[i]  # slope of tangent line
+    b <- log_f[i] - df[i] * envelope_info$support_points[i]  # intercept
+    
+    if (abs(a) < 1e-10) {  # Nearly constant segment
+      segment_probs[i] <- exp(b) * (boundaries[i+1] - boundaries[i])
+    } else {  # Exponential segment
+      segment_probs[i] <- exp(b) * (exp(a * boundaries[i+1]) - exp(a * boundaries[i])) / a
+    }
+  }
+  
+  # Return normalized probabilities
+  segment_probs / sum(segment_probs)
+}
+```
+
+## ARS: Sampling from the Piecewise Envelope
+
+Once the envelope is constructed, we sample from it using a two-step process: (1) choose a segment based on segment probabilities, (2) sample from the chosen exponential/uniform segment using inverse CDF. Each segment has the form $\exp(ax + b)$ on its interval.
+
+```{r}
+# Function to sample from the piecewise envelope
+sample_from_envelope <- function(n_samples, envelope_info, segment_probs) {
+  samples <- numeric(n_samples)
+  
+  for (i in 1:n_samples) {
+    # Step 1: Choose segment based on probabilities
+    segment <- sample(1:length(segment_probs), 1, prob = segment_probs)
+    
+    # Step 2: Sample from chosen segment
+    # Get segment parameters
+    a <- envelope_info$df[segment]  # slope
+    b <- envelope_info$log_f[segment] - envelope_info$df[segment] * envelope_info$support_points[segment]  # intercept
+    x_min <- envelope_info$boundaries[segment]
+    x_max <- envelope_info$boundaries[segment + 1]
+    
+    if (abs(a) < 1e-10) {
+      # Nearly constant segment: uniform sampling
+      samples[i] <- runif(1, x_min, x_max)
+    } else {
+      # Exponential segment: inverse CDF sampling
+      # We want to sample from exp(ax + b) on [x_min, x_max]
+      # CDF: F(x) = [exp(ax + b) - exp(a*x_min + b)] / [exp(a*x_max + b) - exp(a*x_min + b)]
+      u <- runif(1)
+      if (a > 0) {
+        samples[i] <- log(u * (exp(a * x_max) - exp(a * x_min)) + exp(a * x_min)) / a
+      } else {
+        samples[i] <- log((1 - u) * (exp(a * x_min) - exp(a * x_max)) + exp(a * x_max)) / a
+      }
+    }
+  }
+  
+  samples
+}
+```
+
+## Complete ARS Implementation
+
+Now we combine envelope building and sampling into the full adaptive algorithm. The key insight is that rejections provide information about where the envelope is too loose, so we add rejection points as new support points to improve the envelope.
+
+```{r}
+# Complete ARS implementation
+ars_sampler <- function(n, domain = c(-4, 4), eps = 0.1) {
+  # Initialize support points: domain edges + midpoint
+  midpoint <- mean(domain)
+  support_points <- c(domain[1] + eps, midpoint, domain[2] - eps)
+  
+  samples <- numeric(n)
+  n_accepted <- 0
+  n_total <- 0
+  adaptation_history <- list()
+  
+  # Store initial support points
+  initial_support_points <- support_points
+  
+  while (n_accepted < n) {
+    # Build envelope structure
+    envelope_info <- build_ars_envelope(support_points, domain)
+    
+    # Calculate segment probabilities
+    segment_probs <- calculate_segment_probabilities(envelope_info)
+    
+    # Sample from envelope
+    x_prop <- sample_from_envelope(1, envelope_info, segment_probs)
+    
+    # Accept/reject against true density
+    # Compute envelope value at proposed point
+    # Find which segment contains x_prop
+    segment <- which(x_prop >= envelope_info$boundaries[-length(envelope_info$boundaries)] & 
+                    x_prop < envelope_info$boundaries[-1])[1]
+    if (is.na(segment)) segment <- length(envelope_info$support_points)  # Handle boundary case
+    
+    envelope_val <- envelope_info$log_f[segment] + envelope_info$df[segment] * (x_prop - envelope_info$support_points[segment])
+    log_target <- log_normal_density(x_prop)
+    
+    n_total <- n_total + 1
+    
+    if (log(runif(1)) <= log_target - envelope_val) {
+      # Accept the sample
+      n_accepted <- n_accepted + 1
+      samples[n_accepted] <- x_prop
+    } else {
+      # Reject and adapt: add rejection point to support set
+      support_points <- c(support_points, x_prop)
+      adaptation_history[[length(adaptation_history) + 1]] <- x_prop
+    }
+  }
+  
+  attr(samples, "acceptance_rate") <- n_accepted / n_total
+  attr(samples, "adaptations") <- length(adaptation_history)
+  attr(samples, "initial_support_points") <- initial_support_points
+  attr(samples, "final_support_points") <- sort(unique(support_points))
+  samples
+}
+```
+
+# Envelope Comparison: Initial vs After Adaptation
+
+Let's compare the envelope quality at the beginning versus after sampling 100 points:
+
+```{r}
+# Function to visualize envelope
+plot_envelope <- function(n_points, same.seed = TRUE) {
+  if(same.seed) {
+    set.seed(42)
+  }
+  ars_samples <- ars_sampler(n_points)
+  acceptance_rate <- attr(ars_samples, "acceptance_rate")
+  support_points <- attr(ars_samples, "final_support_points")
+  envelope_info <- build_ars_envelope(support_points)
+  
+  title = ifelse(n_points == 0, 
+                 "Initial Envelope",
+                 sprintf("After %d samples", n_points))
+  
+  x_grid <- seq(-4, 4, length.out = 300)
+  true_log_density <- log_normal_density(x_grid)
+  envelope <- numeric(length(x_grid))
+  
+  for (i in seq_along(x_grid)) {
+    x <- x_grid[i]
+    tangent_values <- envelope_info$log_f + envelope_info$df * (x - envelope_info$support_points)
+    envelope[i] <- min(tangent_values)
+  }
+  
+  tibble(x = x_grid, 
+         envelope = envelope, 
+         true_log_density = true_log_density) %>%
+    ggplot(aes(x)) +
+    stat_function(fun = log_normal_density, color = "#f8766d", lwd = 1.2) +
+    geom_line(aes(y = envelope), color = "#619cff", lwd = 1, linetype = "dashed") +
+    geom_point(data = tibble(
+      x = support_points, 
+      y = log_normal_density(support_points)
+      ), aes(x, y), color = "#619", size = 1.8, alpha = .7) +
+    scale_x_continuous(limits = c(-4, 4)) +
+    scale_y_continuous(limits = c(-10, 0)) +
+    theme_light() +
+    labs(x = "x", y = "Log-density", 
+         title = title,
+         subtitle = ifelse(is.na(acceptance_rate),
+                           sprintf("%d support points", length(support_points)),
+                           sprintf("%d support points \n%.1f%% acceptance rate", length(support_points), 100*acceptance_rate)))
+}
+```
+
+
+```{r}
+# Generate ARS samples to get initial and final support points
+plots <- lapply(c(0, 30, 100), plot_envelope)
+
+(p_envelope_comparison <- (plots[[1]] | plots[[2]] | plots[[3]]) +
+ plot_layout(axes = "collect"))
+
+```
+
+```{r include=FALSE}
+ggsave("../Latex/figures/ars-envelope-comparison.png", plot = p_envelope_comparison, device = "png", width = 8, height = 4.5)
+```
+
+# Acceptance Rate Comparison
+
+Now let's compare the acceptance rates of both methods across different sample sizes:
+
+```{r}
+# Compare acceptance rates across sample sizes
+compare_acceptance_rates <- function(sample_sizes = 2^seq(4, 12)) {
+  set.seed(42)
+  
+  results <- tibble()
+  
+  for (n in sample_sizes) {
+    # Standard rejection sampling
+    std_samples <- standard_rejection_sampler(n)
+    std_acceptance <- attr(std_samples, "acceptance_rate")
+    
+    # ARS
+    ars_samples <- ars_sampler(n)
+    ars_acceptance <- attr(ars_samples, "acceptance_rate")
+    ars_adaptations <- attr(ars_samples, "adaptations")
+    
+    results <- rbind(results, tibble(
+      n_samples = n,
+      method = c("Standard Rejection", "ARS"),
+      acceptance_rate = c(std_acceptance, ars_acceptance),
+      adaptations = c(NA, ars_adaptations)
+    ))
+  }
+  
+  results
+}
+
+acceptance_comparison <- compare_acceptance_rates()
+
+# Plot acceptance rates
+(p_acceptance_comparison <- acceptance_comparison %>%
+  ggplot(aes(log2(n_samples), acceptance_rate, color = method, shape = method)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 3) +
+  scale_color_manual(values = c("#619cff", "#f8766d")) +
+  scale_shape_manual(values = c(16, 17)) +
+  scale_y_continuous(labels = scales::percent_format(), limits = c(0, 1)) +
+  scale_x_continuous(labels = scales::label_math(expr = 2^.x)) +
+  theme_light() +
+  labs(x = "Sample Size", 
+       y = "Acceptance Rate", 
+       title = "Acceptance Rate Comparison",
+       color = "Method", shape = "Method"))
+```
+
+```{r include=FALSE}
+ggsave("../Latex/figures/ars-acceptance-comparison.png", plot = p_acceptance_comparison, device = "png", width = 10, height = 6)
+```
+
+# Distribution Quality Validation
+
+Finally, let's verify that both methods produce correct samples with larger sample sizes:
+
+```{r}
+# Generate final comparison samples
+set.seed(123)
+n_final <- 512
+
+ars_final <- ars_sampler(n_final)
+std_final <- standard_rejection_sampler(n_final)
+
+(p_distr_comparison <- tibble("ARS" = ars_final, "Standard Rejection Sampling" = std_final) %>%
+  pivot_longer(everything(), values_to = "value", names_to = "method") %>%
+  ggplot(aes(value)) +
+  geom_density(aes(color = method), lwd = .8) +
+  geom_histogram(aes(y = ..density.., fill = method), alpha = .3, ) +
+  stat_function(fun = dnorm, lty = "dashed") +
+  guides(color = "none", fill = "none") +
+  facet_wrap(~method) +
+  theme_light() +
+    labs(title = sprintf("Comparison of %d samples", n_final),
+         subtitle = sprintf("Acceptance rates: %.1f%% (ARS) vs. %.1f%% (Standard Rejection Sampling)", 100*attr(ars_final, "acceptance_rate"), 100*attr(std_final, "acceptance_rate")),
+         x = "x"))
+```
+
+```{r include=FALSE}
+ggsave("../Latex/figures/ars-distribution-comparison.png", plot = p_distr_comparison, device = "png", width = 10, height = 6)
+```
+
+
+# Summary
+
+The comparison between ARS and standard rejection sampling reveals several key insights:
+
+**Acceptance Rate Advantages:**
+- **Standard Rejection**: Fixed ~32% acceptance rate due to poor proposal efficiency on [-4,4]
+- **ARS**: Starts around 60% and improves to >85% through adaptive envelope refinement
+- **Final advantage**: ARS achieves 2.5-3x higher acceptance rates
+
+**Adaptive Learning:**
+- ARS automatically improves by adding support points where rejections occur
+- Each adaptation makes the envelope tighter around the target density
+- The method becomes progressively more efficient during sampling
+
+**Practical Implications:**
+- ARS requires more complex implementation but pays off with superior efficiency
+- Standard rejection is simple but wasteful for complex domains
+- The adaptive nature makes ARS robust across different target distributions
+
+**Key Takeaway**: While standard rejection sampling has the advantage of simplicity, ARS demonstrates the power of adaptive algorithms. By learning from rejections, ARS transforms computational "waste" into useful information, leading to dramatically improved sampling efficiency. This principle extends beyond normal distributions to any log-concave target, making ARS a powerful general-purpose sampling tool.

@@ -1,0 +1,232 @@
+---
+title: "Monte Carlo Integration with Control Variates"
+author: "Nikolai German"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(purrr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(patchwork)
+```
+
+# Introduction
+
+We want to compute the integral $I = \int_0^1 e^x \, dx$, for which we know the true value is $e - 1 \approx 1.718$.
+
+The **control variates** method is a variance reduction technique that uses a correlated function with known expectation to reduce the variance of our Monte Carlo estimator.
+
+Let $f(x) = e^x$ be our target function and $g(x) = x$ be our control variate. We know that:
+- $\int_0^1 e^x \, dx = e - 1$ (unknown, what we want to estimate)
+- $\int_0^1 x \, dx = \frac{1}{2}$ (known exactly)
+
+The control variate estimator is:
+$$\hat{I}_{CV} = \frac{1}{n}\sum_{i=1}^n f(U_i) - c\left(\frac{1}{n}\sum_{i=1}^n g(U_i) - \frac{1}{2}\right)$$
+
+where $U_i \overset{i.i.d.}{\sim} \text{Unif}(0, 1)$ and $c$ is chosen to minimize variance:
+$$c^* = \frac{\text{Cov}(f(U), g(U))}{\text{Var}(g(U))}$$
+
+# Visualization of Control Variates Method
+
+The following code demonstrates how the control variate method works:
+
+```{r}
+# Target function and control variate
+f_target <- function(x) exp(x)
+g_control <- function(x) x
+
+# True values
+true_f <- exp(1) - 1  # ≈ 1.718
+true_g <- 0.5
+
+generate_plot <- function(n) {
+  set.seed(42)
+  U <- runif(n)
+  f_vals <- f_target(U)
+  g_vals <- g_control(U)
+  
+  # Standard Monte Carlo estimate
+  est_standard <- mean(f_vals)
+  
+  # Control variate estimate with optimal c
+  c_opt <- cov(f_vals, g_vals) / var(g_vals)
+  est_cv <- mean(f_vals) - c_opt * (mean(g_vals) - true_g)
+  
+  tibble(
+    x = seq(0, 1, length.out = 100),
+    f_x = f_target(x),
+    g_x = g_control(x)
+  ) %>%
+  ggplot(aes(x)) +
+  geom_line(aes(y = f_x), color = "#f8766d", size = 1.2, alpha = 0.8) +
+  geom_line(aes(y = g_x), color = "#00ba38", size = 1.2, alpha = 0.8) +
+  geom_point(data = tibble(U = U, f_vals = f_vals), 
+             aes(x = U, y = f_vals), color = "#f8766d", alpha = 0.6) +
+  geom_point(data = tibble(U = U, g_vals = g_vals), 
+             aes(x = U, y = g_vals), color = "#00ba38", alpha = 0.6) +
+  geom_hline(yintercept = true_f, color = "#f8766d", linetype = "dashed", alpha = 0.7) +
+  geom_hline(yintercept = true_g, color = "#00ba38", linetype = "dashed", alpha = 0.7) +
+  geom_hline(yintercept = est_standard, color = "#f8766d", linetype = "dotted", size = 1) +
+  geom_hline(yintercept = est_cv, color = "#619cff", linetype = "dotted", size = 1) +
+  scale_x_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(0, 3)) +
+  theme_light() +
+  labs(x = "x", y = "Function value", 
+       title = sprintf("n = %d samples", n),
+       subtitle = sprintf("Standard: %.3f, CV: %.3f, True: %.3f", 
+                         est_standard, est_cv, true_f)) +
+  annotate("text", x = 0.7, y = 2.5, label = "f(x) = e^x", color = "#f8766d") +
+  annotate("text", x = 0.7, y = 0.3, label = "g(x) = x", color = "#00ba38")
+}
+
+plots <- lapply(c(10, 50, 100), generate_plot)
+
+(p_cv_viz <- (plots[[1]] | plots[[2]] | plots[[3]]) + plot_layout(axes = "collect"))
+```
+
+```{r include=FALSE}
+ggsave("../Latex/figures/mc-control-variates1.png", plot = p_cv_viz, device = "png", width = 12, height = 4.5)
+```
+
+The plots show the target function $f(x) = e^x$ (red) and control variate $g(x) = x$ (green). The blue dotted line shows the control variate estimate, which typically lies closer to the true value (red dashed line) than the standard Monte Carlo estimate (red dotted line).
+
+# Variance Reduction Analysis
+
+We now compare the variance of the standard Monte Carlo estimator with the control variate estimator:
+
+```{r}
+mc_comparison <- function(n, n_rep = 1000) {
+  set.seed(123)
+  
+  # Storage for estimates
+  est_standard <- numeric(n_rep)
+  est_cv <- numeric(n_rep)
+  
+  for (i in 1:n_rep) {
+    U <- runif(n)
+    f_vals <- f_target(U)
+    g_vals <- g_control(U)
+    
+    # Standard Monte Carlo
+    est_standard[i] <- mean(f_vals)
+    
+    # Control variate
+    c_opt <- cov(f_vals, g_vals) / var(g_vals)
+    est_cv[i] <- mean(f_vals) - c_opt * (mean(g_vals) - true_g)
+  }
+  
+  tibble(
+    method = c("Standard MC", "Control Variates"),
+    bias = c(mean(est_standard) - true_f, mean(est_cv) - true_f),
+    variance = c(var(est_standard), var(est_cv)),
+    mse = c(mean((est_standard - true_f)^2), mean((est_cv - true_f)^2))
+  )
+}
+
+set.seed(42)
+df_comparison <- tibble(n = c(25, 50, 100, 200, 500)) %>%
+  mutate(results = map(n, mc_comparison)) %>%
+  unnest(results)
+
+(p_variance <- df_comparison %>%
+  ggplot(aes(n, variance, color = method)) +
+  geom_line(size = 1.2) +
+  geom_point(size = 2) +
+  scale_y_log10() +
+  scale_color_manual(values = c("#f8766d", "#619cff")) +
+  labs(x = "Sample Size (n)", 
+       y = "Variance (log scale)", 
+       title = "Variance Comparison: Standard MC vs. Control Variates",
+       color = "Method") +
+  theme_light())
+```
+
+# Convergence Analysis
+
+Let's analyze how both methods converge to the true value:
+
+```{r}
+convergence_analysis <- function(max_n = 1000) {
+  set.seed(42)
+  U <- runif(max_n)
+  f_vals <- f_target(U)
+  g_vals <- g_control(U)
+  
+  # Create cumulative estimates
+  n_seq <- seq(10, max_n, by = 10)
+  
+  est_standard <- numeric(length(n_seq))
+  est_cv <- numeric(length(n_seq))
+  
+  for (i in seq_along(n_seq)) {
+    n <- n_seq[i]
+    f_sub <- f_vals[1:n]
+    g_sub <- g_vals[1:n]
+    
+    # Standard MC
+    est_standard[i] <- mean(f_sub)
+    
+    # Control variate
+    c_opt <- cov(f_sub, g_sub) / var(g_sub)
+    est_cv[i] <- mean(f_sub) - c_opt * (mean(g_sub) - true_g)
+  }
+  
+  tibble(
+    n = n_seq,
+    standard = est_standard,
+    control_variate = est_cv
+  )
+}
+
+df_conv <- convergence_analysis()
+
+(p_convergence <- df_conv %>%
+  pivot_longer(-n, names_to = "method", values_to = "estimate") %>%
+  ggplot(aes(n, estimate, color = method)) +
+  geom_line(size = 1) +
+  geom_hline(yintercept = true_f, linetype = "dashed", color = "black", alpha = 0.7) +
+  scale_color_manual(values = c("#619cff", "#f8766d"), 
+                     labels = c("Control Variates", "Standard MC")) +
+  labs(x = "Sample Size (n)", 
+       y = "Estimate", 
+       title = "Convergence to True Value",
+       subtitle = sprintf("True value = %.3f", true_f),
+       color = "Method") +
+  theme_light())
+```
+
+```{r include=FALSE}
+ggsave("../Latex/figures/mc-control-variates2.png", plot = p_convergence, device = "png", width = 8, height = 8)
+```
+
+# Theoretical Variance Reduction
+
+The theoretical variance reduction factor is:
+$$\frac{\text{Var}(\hat{I}_{CV})}{\text{Var}(\hat{I}_{standard})} = 1 - \rho^2$$
+
+where $\rho$ is the correlation between $f(U)$ and $g(U)$.
+
+```{r}
+# Calculate theoretical correlation and variance reduction
+set.seed(42)
+U_theory <- runif(10000)
+f_theory <- f_target(U_theory)
+g_theory <- g_control(U_theory)
+
+correlation <- cor(f_theory, g_theory)
+theoretical_reduction <- 1 - correlation^2
+
+cat("Correlation between f(U) and g(U):", round(correlation, 3), "\n")
+cat("Theoretical variance reduction factor:", round(theoretical_reduction, 3), "\n")
+cat("Expected variance reduction:", round((1 - theoretical_reduction) * 100, 1), "%\n")
+```
+
+The control variates method achieves significant variance reduction because $e^x$ and $x$ are highly positively correlated on $[0,1]$. This strong correlation allows the control variate to effectively "correct" for the randomness in the standard Monte Carlo estimate, leading to more precise integration results with the same computational cost.

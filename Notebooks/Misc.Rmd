@@ -1,0 +1,89 @@
+---
+title: "Misc"
+author: "Nikolai German"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(ggplot2)
+library(patchwork)
+library(dplyr)
+library(tidyr)
+```
+
+```{r}
+plot_pi <- function(n) {
+  data = tibble(x = runif(n, -1, 1), y = runif(n, -1, 1)) %>%
+    mutate(inside = x^2 + y^2 <= 1)
+  pi_est = 4 * mean(data$inside)
+  # Create circle coordinates for all plots
+  circle_data <- tibble(
+    x = cos(seq(0, 2*pi, length.out = 100)),
+    y = sin(seq(0, 2*pi, length.out = 100))
+  )
+  
+  ggplot(data, aes(x, y, color = inside)) +
+    geom_point() +
+    scale_color_manual(values = c("FALSE" = "#e74c3c", "TRUE" = "#3498db")) +
+  # Add circle outline to each facet
+    geom_path(data = circle_data, aes(x = x, y = y), 
+              color = "black", size = 1, inherit.aes = FALSE) +
+  # Add square outline
+    geom_rect(aes(xmin = -1, xmax = 1, ymin = -1, ymax = 1),
+              fill = NA, color = "black", size = 1, inherit.aes = FALSE) +
+    coord_fixed() +
+    theme_void() +
+    theme(
+      legend.position = "none",
+      strip.text = element_text(size = 12, face = "bold"),
+      plot.background = element_rect(fill = "white", color = NA),
+      panel.spacing = unit(0.5, "cm"),
+      plot.title = element_text(hjust = 0.5)
+    ) +
+    xlim(-1.1, 1.1) + ylim(-1.1, 1.1) +
+    labs(title = latex2exp::TeX(sprintf(r'($\hat{\pi} = %.3f$)', pi_est)))+
+    theme(plot.title = element_text(hjust = 0.5))
+}
+```
+
+
+```{r}
+set.seed(42)
+plots <- lapply(c(10, 30, 100, 300), plot_pi)
+
+(plots[[1]] | plots[[2]]) / (plots[[3]] | plots[[4]])
+```
+
+
+```{r}
+# Save for presentation
+ggsave("../Latex/figures/monte_carlo_title.png", width = 8, height = 6, dpi = 300, bg = "white")
+```
+
+```{r}
+qmc <- as_tibble(SobolSequence::sobolSequence.points(2, 10, 100))
+colnames(qmc) <- c("x", "y")
+
+mc <- tibble(x = runif(100), y = runif(100))
+
+grid <- expand_grid(x = seq(0, 1, length.out = 10), y = seq(0, 1, length.out = 10))
+
+df <- bind_rows(qmc, mc, grid, .id = "method") %>%
+  mutate(method = factor(method, labels = c("qmc", "mc", "grid")))
+
+(p_discrepancy <- ggplot(df, aes(x, y)) +
+  geom_point(aes(color = method), alpha = .7, size = .7) +
+  geom_rug() +
+  facet_wrap(~method) +
+  scale_x_continuous(labels = scales::label_number(), guide = guide_axis(angle = 45)) +
+  guides(color = "none") +
+  theme_light())
+```
+
+
+```{r include=FALSE}
+ggsave("../Latex/figures/qmc_discrepancy.png", plot = p_discrepancy, device = "png", width = 9, height = 3)
+```
+
