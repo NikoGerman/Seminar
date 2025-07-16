@@ -195,16 +195,21 @@ df_conv <- convergence_analysis()
   geom_hline(yintercept = true_f, linetype = "dashed", color = "black", alpha = 0.7) +
   scale_color_manual(values = c("#619cff", "#f8766d"), 
                      labels = c("Control Variates", "Standard MC")) +
-  labs(x = "Sample Size (n)", 
+  labs(x = "N", 
        y = "Estimate", 
        title = "Convergence to True Value",
        subtitle = sprintf("True value = %.3f", true_f),
        color = "Method") +
-  theme_light())
+  theme_light() +
+  theme(
+    legend.position = "inside",
+    legend.position.inside = c(0.8,0.8)
+      )
+  )
 ```
 
 ```{r include=FALSE}
-ggsave("../Latex/figures/mc-control-variates2.png", plot = p_convergence, device = "png", width = 8, height = 8)
+ggsave("../Latex/figures/mc-control-variates2.png", plot = (p_convergence + labs(title = "", subtitle = "")), device = "png", width = 8, height = 6)
 ```
 
 # Theoretical Variance Reduction
